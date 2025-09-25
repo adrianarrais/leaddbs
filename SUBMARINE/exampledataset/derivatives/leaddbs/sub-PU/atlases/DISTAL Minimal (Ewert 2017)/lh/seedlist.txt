@@ -1,0 +1,3 @@
+/Users/andreashorn/Documents/MATLAB/leaddbs/templates/space/MNI152NLin2009bAsym/atlases/DISTAL Minimal (Ewert 2017)/lh/RN.nii.gz
+/Users/andreashorn/Documents/MATLAB/leaddbs/templates/space/MNI152NLin2009bAsym/atlases/DISTAL Minimal (Ewert 2017)/lh/GPi.nii.gz
+/Users/andreashorn/Documents/MATLAB/leaddbs/templates/space/MNI152NLin2009bAsym/atlases/DISTAL Minimal (Ewert 2017)/lh/STN.nii.gz

@@ -1,0 +1,315 @@
+
+
+07-Jun-2025 13:43:36: ea_spm_coreg
+--------------------------
+sub-PU_ses-preop_desc-preproc_acq-iso_T2w was linearly co-registered to sub-PU_ses-preop_space-anchorNative_desc-preproc_acq-ax_T1w using SPM12 (Friston 2007; http://www.fil.ion.ucl.ac.uk/spm/software/)
+
+References:
+--------------------------
+1) Friston, K. J., Ashburner, J. T., Kiebel, S. J., Nichols, T. E., & Penny, W. D. (2007). Statistical Parametric Mapping: The Analysis of Functional Brain Images. Academic Press.
+***
+
+
+
+07-Jun-2025 13:43:45: ea_spm_coreg
+--------------------------
+sub-PU_ses-preop_desc-preproc_acq-ax_T2w was linearly co-registered to sub-PU_ses-preop_space-anchorNative_desc-preproc_acq-ax_T1w using SPM12 (Friston 2007; http://www.fil.ion.ucl.ac.uk/spm/software/)
+
+References:
+--------------------------
+1) Friston, K. J., Ashburner, J. T., Kiebel, S. J., Nichols, T. E., & Penny, W. D. (2007). Statistical Parametric Mapping: The Analysis of Functional Brain Images. Academic Press.
+***
+
+
+
+07-Jun-2025 13:43:53: ea_spm_coreg
+--------------------------
+sub-PU_ses-preop_desc-preproc_acq-cor_T2w was linearly co-registered to sub-PU_ses-preop_space-anchorNative_desc-preproc_acq-ax_T1w using SPM12 (Friston 2007; http://www.fil.ion.ucl.ac.uk/spm/software/)
+
+References:
+--------------------------
+1) Friston, K. J., Ashburner, J. T., Kiebel, S. J., Nichols, T. E., & Penny, W. D. (2007). Statistical Parametric Mapping: The Analysis of Functional Brain Images. Academic Press.
+***
+
+
+
+07-Jun-2025 13:44:16: ea_ants_linear
+--------------------------
+sub-PU_ses-postop_desc-preproc_CT was co-registered to sub-PU_ses-preop_space-anchorNative_desc-preproc_acq-ax_T1w using a two-stage linear registration (rigid followed by affine) as implemented in Advanced Normlization Tools (Avants 2008; http://stnava.github.io/ANTs/)
+
+References:
+--------------------------
+1) Avants, B. B., Epstein, C. L., Grossman, M., & Gee, J. C. (2008). Symmetric diffeomorphic image registration with cross-correlation: evaluating automated labeling of elderly and neurodegenerative brain. Medical Image Analysis, 12(1), 26?41. http://doi.org/10.1016/j.media.2007.06.004
+***
+
+
+
+07-Jun-2025 13:53:22: ea_normalize_ants
+--------------------------
+Pre- (and post-) operative acquisitions were spatially normalized into MNI152NLin2009bAsym space (Fonov 2011) based on preoperative acquisition(s) (T2w, T2w, T2w, T1w) using the SyN registration approach as implemented in Advanced Normalization Tools (Avants 2008; http://stnava.github.io/ANTs/). Nonlinear deformation into template space was achieved in five stages: After two linear (rigid followed by affine) steps,  A nonlinear (whole brain) SyN-registration stage was followed by two nonlinear SyN-registrations that consecutively focused on the area of interest  as defined by subcortical masks in Schoenecker 2008.
+
+References:
+--------------------------
+1) Avants, B. B., Epstein, C. L., Grossman, M., & Gee, J. C. (2008). Symmetric diffeomorphic image registration with cross-correlation: evaluating automated labeling of elderly and neurodegenerative brain. Medical Image Analysis, 12(1), 26?41. http://doi.org/10.1016/j.media.2007.06.004
+2) Schoenecker, T., Kupsch, A., Kuehn, A. A., Schneider, G.-H., & Hoffmann, K. T. (2009). Automated Optimization of Subcortical Cerebral MR Imaging-Atlas Coregistration for Improved Postoperative Electrode Localization in Deep Brain Stimulation. AJNR Am J Neuroradiol, 30(10), 1914?1921. http://doi.org/10.3174/ajnr.A1741
+3) VS Fonov, AC Evans, K Botteron, CR Almli, RC McKinstry, DL Collins and BDCG, Unbiased average age-appropriate atlases for pediatric studies, NeuroImage,Volume 54, Issue 1, January 2011, ISSN 1053–8119, DOI: 10.1016/j.neuroimage.2010.07.033
+***
+
+
+
+07-Jun-2025 13:55:18: ea_ants_linear
+--------------------------
+sub-PU_ses-postop_space-anchorNative_rec-tonemapped_desc-preproc_CT was co-registered to sub-PU_ses-preop_space-anchorNative_rec-brainshift_desc-preproc_acq-ax_T1w using a two-stage linear registration (rigid followed by affine) as implemented in Advanced Normlization Tools (Avants 2008; http://stnava.github.io/ANTs/)
+
+References:
+--------------------------
+1) Avants, B. B., Epstein, C. L., Grossman, M., & Gee, J. C. (2008). Symmetric diffeomorphic image registration with cross-correlation: evaluating automated labeling of elderly and neurodegenerative brain. Medical Image Analysis, 12(1), 26?41. http://doi.org/10.1016/j.media.2007.06.004
+***
+
+
+
+07-Jun-2025 13:55:48: saveandclose
+--------------------------
+DBS electrode localizations were corrected for brainshift in postoperative acquisitions by applying a refined affine transform calculated between pre- and postoperative acquisitions that were restricted to a subcortical area of interest as implemented in the brainshift-correction module of Lead-DBS software (Horn & Kuehn 2005; SCR_002915; https://www.lead-dbs.org).
+
+References:
+--------------------------
+1) Horn, A., & Kuehn, A. A. (2015). Lead-DBS: a toolbox for deep brain stimulation electrode localizations and visualizations. NeuroImage, 107, 127?135. http://doi.org/10.1016/j.neuroimage.2014.12.002
+***
+
+
+
+07-Jun-2025 14:10:56: approvebutn_Callback
+--------------------------
+DBS electrode localizations were corrected for brainshift in postoperative acquisitions by applying a refined affine transform calculated between pre- and postoperative acquisitions that were restricted to a subcortical area of interest as implemented in the brainshift-correction module of Lead-DBS software (Horn & Kuehn 2005; SCR_002915; https://www.lead-dbs.org).
+
+References:
+--------------------------
+1) Horn, A., & Kuehn, A. A. (2015). Lead-DBS: a toolbox for deep brain stimulation electrode localizations and visualizations. NeuroImage, 107, 127?135. http://doi.org/10.1016/j.neuroimage.2014.12.002
+***
+
+
+
+07-Jun-2025 15:02:13: ea_runpacer
+--------------------------
+DBS-Electrodes were automatically pre-localized in native & template space using the PaCER algorithm (Husch et al., 2017; http://adhusch.github.io/PaCER/).
+
+References:
+--------------------------
+1) Husch, A., Petersen, M. V., Gemmar, P., Goncalves, J., & Hertel, F. (2017). PaCER - A fully automated method for electrode trajectory and contact reconstruction in deep brain stimulation. NeuroImage. Clinical, 17, 80?89. http://doi.org/10.1016/j.nicl.2017.10.004
+***
+
+
+
+07-Jun-2025 15:05:09: ea_runpacer
+--------------------------
+DBS-Electrodes were automatically pre-localized in native & template space using the PaCER algorithm (Husch et al., 2017; http://adhusch.github.io/PaCER/).
+
+References:
+--------------------------
+1) Husch, A., Petersen, M. V., Gemmar, P., Goncalves, J., & Hertel, F. (2017). PaCER - A fully automated method for electrode trajectory and contact reconstruction in deep brain stimulation. NeuroImage. Clinical, 17, 80?89. http://doi.org/10.1016/j.nicl.2017.10.004
+***
+
+
+
+07-Jun-2025 15:06:35: ea_endfcn
+--------------------------
+DBS-Electrodes were manually localized based on post-operative acquisitions using a tool specifically designed for this task (as implemented in Lead-DBS software; Horn & Kuehn 2005; SCR_002915; https://www.lead-dbs.org).
+
+References:
+--------------------------
+1) Horn, A., & Kuehn, A. A. (2015). Lead-DBS: a toolbox for deep brain stimulation electrode localizations and visualizations. NeuroImage, 107, 127?135. http://doi.org/10.1016/j.neuroimage.2014.12.002
+***
+
+
+
+07-Jun-2025 20:15:32: ea_diode_manual_main
+--------------------------
+Orientation of directional DBS leads was determined using the algorithm published by Dembek et al. 2019 as implemented in Lead-DBS software.
+
+References:
+--------------------------
+1) T.A. Dembek, M. Hoevels, A. Hellerbach, A. Horn, J.N. Petry-Schmelzer, J. Borggrefe, J. Wirths, H.S. Dafsari, M.T. Barbe, V. Visser-Vandewalle & H. Treuer (2019). Directional DBS leads show large deviations from their intended implantation orientation. Parkinsonism Relat Disord. 2019 Oct;67:117-121. doi: 10.1016/j.parkreldis.2019.08.017.
+***
+
+
+
+07-Jun-2025 20:15:53: ea_diode_manual_main
+--------------------------
+Orientation of directional DBS leads was determined using the algorithm published by Dembek et al. 2019 as implemented in Lead-DBS software.
+
+References:
+--------------------------
+1) T.A. Dembek, M. Hoevels, A. Hellerbach, A. Horn, J.N. Petry-Schmelzer, J. Borggrefe, J. Wirths, H.S. Dafsari, M.T. Barbe, V. Visser-Vandewalle & H. Treuer (2019). Directional DBS leads show large deviations from their intended implantation orientation. Parkinsonism Relat Disord. 2019 Oct;67:117-121. doi: 10.1016/j.parkreldis.2019.08.017.
+***
+
+
+
+07-Jun-2025 20:16:15: ea_endfcn
+--------------------------
+DBS-Electrodes were manually localized based on post-operative acquisitions using a tool specifically designed for this task (as implemented in Lead-DBS software; Horn & Kuehn 2005; SCR_002915; https://www.lead-dbs.org).
+
+References:
+--------------------------
+1) Horn, A., & Kuehn, A. A. (2015). Lead-DBS: a toolbox for deep brain stimulation electrode localizations and visualizations. NeuroImage, 107, 127?135. http://doi.org/10.1016/j.neuroimage.2014.12.002
+***
+
+
+
+16-Jun-2025 11:55:03: ea_showatlas
+--------------------------
+Atlas used for 3D visualization: OCD Tract Target (Li 2020)
+
+References:
+--------------------------
+1) Li N, Baldermann JC, Kibleur A, Treu S, Akram H, Elias GJB, Boutet A, Lozano AM, Al-Fatly B, Strange B, Barcia J, Zrinzo L, Joyce E, Chabardes S, Visser-Vandewalle V, Polosan M, Kuhn J, Kühn AA, Horn A. A unified connectomic target for deep brain stimulation in obsessive-compulsive disorder. Nature Communications. 2020, In Press.
+***
+
+
+
+10-Jul-2025 09:11:34: ea_showatlas
+--------------------------
+Atlas used for 3D visualization: DISTAL Nano (Ewert 2017)
+
+References:
+--------------------------
+1) Ewert, S., Plettig, P., Li, N., Chakravarty, M. M., Collins, D. L., Herrington, T. M., et al. (2017). Toward defining deep brain stimulation targets in MNI space: A subcortical atlas based on multimodal MRI, histology and structural connectivity. NeuroImage.
+2) Chakravarty, M. M., Bertrand, G., Hodge, C. P., Sadikot, A. F., & Collins, D. L. (2006). The creation of a brain atlas for image guided neurosurgery using serial histological data. NeuroImage, 30(2), 359‚Äì376.
+***
+
+
+
+10-Jul-2025 09:45:18: ea_showatlas
+--------------------------
+Atlas used for 3D visualization: DISTAL Nano (Ewert 2017)
+
+References:
+--------------------------
+1) Ewert, S., Plettig, P., Li, N., Chakravarty, M. M., Collins, D. L., Herrington, T. M., et al. (2017). Toward defining deep brain stimulation targets in MNI space: A subcortical atlas based on multimodal MRI, histology and structural connectivity. NeuroImage.
+2) Chakravarty, M. M., Bertrand, G., Hodge, C. P., Sadikot, A. F., & Collins, D. L. (2006). The creation of a brain atlas for image guided neurosurgery using serial histological data. NeuroImage, 30(2), 359‚Äì376.
+***
+
+
+
+10-Jul-2025 09:49:49: ea_showatlas
+--------------------------
+Atlas used for 3D visualization: DISTAL Nano (Ewert 2017)
+
+References:
+--------------------------
+1) Ewert, S., Plettig, P., Li, N., Chakravarty, M. M., Collins, D. L., Herrington, T. M., et al. (2017). Toward defining deep brain stimulation targets in MNI space: A subcortical atlas based on multimodal MRI, histology and structural connectivity. NeuroImage.
+2) Chakravarty, M. M., Bertrand, G., Hodge, C. P., Sadikot, A. F., & Collins, D. L. (2006). The creation of a brain atlas for image guided neurosurgery using serial histological data. NeuroImage, 30(2), 359‚Äì376.
+***
+
+
+
+22-Sep-2025 16:07:37: ea_showatlas
+--------------------------
+Atlas used for 3D visualization: DISTAL Minimal Atlas (Ewert 2017)
+
+References:
+--------------------------
+1) Ewert, S., Plettig, P., Li, N., Chakravarty, M. M., Collins, D. L., Herrington, T. M., et al. (2017). Toward defining deep brain stimulation targets in MNI space: A subcortical atlas based on multimodal MRI, histology and structural connectivity. NeuroImage.
+2) Chakravarty, M. M., Bertrand, G., Hodge, C. P., Sadikot, A. F., & Collins, D. L. (2006). The creation of a brain atlas for image guided neurosurgery using serial histological data. NeuroImage, 30(2), 359‚Äì376.
+***
+
+
+
+22-Sep-2025 19:27:19: ea_runpacer
+--------------------------
+DBS-Electrodes were automatically pre-localized in native & template space using the PaCER algorithm (Husch et al., 2017; http://adhusch.github.io/PaCER/).
+
+References:
+--------------------------
+1) Husch, A., Petersen, M. V., Gemmar, P., Goncalves, J., & Hertel, F. (2017). PaCER - A fully automated method for electrode trajectory and contact reconstruction in deep brain stimulation. NeuroImage. Clinical, 17, 80?89. http://doi.org/10.1016/j.nicl.2017.10.004
+***
+
+
+
+22-Sep-2025 19:28:50: ea_endfcn
+--------------------------
+DBS-Electrodes were manually localized based on post-operative acquisitions using a tool specifically designed for this task (as implemented in Lead-DBS software; Horn & Kuehn 2005; SCR_002915; https://www.lead-dbs.org).
+
+References:
+--------------------------
+1) Horn, A., & Kuehn, A. A. (2015). Lead-DBS: a toolbox for deep brain stimulation electrode localizations and visualizations. NeuroImage, 107, 127?135. http://doi.org/10.1016/j.neuroimage.2014.12.002
+***
+
+
+
+22-Sep-2025 19:29:55: ea_diode_manual_main
+--------------------------
+Orientation of directional DBS leads was determined using the algorithm published by Dembek et al. 2019 as implemented in Lead-DBS software.
+
+References:
+--------------------------
+1) T.A. Dembek, M. Hoevels, A. Hellerbach, A. Horn, J.N. Petry-Schmelzer, J. Borggrefe, J. Wirths, H.S. Dafsari, M.T. Barbe, V. Visser-Vandewalle & H. Treuer (2019). Directional DBS leads show large deviations from their intended implantation orientation. Parkinsonism Relat Disord. 2019 Oct;67:117-121. doi: 10.1016/j.parkreldis.2019.08.017.
+***
+
+
+
+22-Sep-2025 19:30:16: ea_diode_manual_main
+--------------------------
+Orientation of directional DBS leads was determined using the algorithm published by Dembek et al. 2019 as implemented in Lead-DBS software.
+
+References:
+--------------------------
+1) T.A. Dembek, M. Hoevels, A. Hellerbach, A. Horn, J.N. Petry-Schmelzer, J. Borggrefe, J. Wirths, H.S. Dafsari, M.T. Barbe, V. Visser-Vandewalle & H. Treuer (2019). Directional DBS leads show large deviations from their intended implantation orientation. Parkinsonism Relat Disord. 2019 Oct;67:117-121. doi: 10.1016/j.parkreldis.2019.08.017.
+***
+
+
+
+22-Sep-2025 19:30:36: ea_endfcn
+--------------------------
+DBS-Electrodes were manually localized based on post-operative acquisitions using a tool specifically designed for this task (as implemented in Lead-DBS software; Horn & Kuehn 2005; SCR_002915; https://www.lead-dbs.org).
+
+References:
+--------------------------
+1) Horn, A., & Kuehn, A. A. (2015). Lead-DBS: a toolbox for deep brain stimulation electrode localizations and visualizations. NeuroImage, 107, 127?135. http://doi.org/10.1016/j.neuroimage.2014.12.002
+***
+
+
+
+22-Sep-2025 19:31:05: ea_showatlas
+--------------------------
+Atlas used for 3D visualization: DISTAL Minimal Atlas (Ewert 2017)
+
+References:
+--------------------------
+1) Ewert, S., Plettig, P., Li, N., Chakravarty, M. M., Collins, D. L., Herrington, T. M., et al. (2017). Toward defining deep brain stimulation targets in MNI space: A subcortical atlas based on multimodal MRI, histology and structural connectivity. NeuroImage.
+2) Chakravarty, M. M., Bertrand, G., Hodge, C. P., Sadikot, A. F., & Collins, D. L. (2006). The creation of a brain atlas for image guided neurosurgery using serial histological data. NeuroImage, 30(2), 359‚Äì376.
+***
+
+
+
+23-Sep-2025 23:23:33: ea_spm_coreg
+--------------------------
+sub-PU_ses-preop_space-anchorNative_desc-preproc_acq-ax_T1w was linearly co-registered to sub-PU_ses-preop_acq-iso_dwi using SPM12 (Friston 2007; http://www.fil.ion.ucl.ac.uk/spm/software/)
+
+References:
+--------------------------
+1) Friston, K. J., Ashburner, J. T., Kiebel, S. J., Nichols, T. E., & Penny, W. D. (2007). Statistical Parametric Mapping: The Analysis of Functional Brain Images. Academic Press.
+***
+
+
+
+23-Sep-2025 23:35:54: ea_spm_coreg
+--------------------------
+sub-PU_ses-preop_space-anchorNative_desc-preproc_acq-ax_T1w was linearly co-registered to sub-PU_ses-preop_acq-iso_dwi using SPM12 (Friston 2007; http://www.fil.ion.ucl.ac.uk/spm/software/)
+
+References:
+--------------------------
+1) Friston, K. J., Ashburner, J. T., Kiebel, S. J., Nichols, T. E., & Penny, W. D. (2007). Statistical Parametric Mapping: The Analysis of Functional Brain Images. Academic Press.
+***
+
+
+
+23-Sep-2025 23:57:09: ea_spm_coreg
+--------------------------
+sub-PU_ses-preop_space-anchorNative_desc-preproc_acq-ax_T1w was linearly co-registered to sub-PU_ses-preop_acq-iso_dwi using SPM12 (Friston 2007; http://www.fil.ion.ucl.ac.uk/spm/software/)
+
+References:
+--------------------------
+1) Friston, K. J., Ashburner, J. T., Kiebel, S. J., Nichols, T. E., & Penny, W. D. (2007). Statistical Parametric Mapping: The Analysis of Functional Brain Images. Academic Press.
+***
+
