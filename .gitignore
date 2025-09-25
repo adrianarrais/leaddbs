@@ -68,3 +68,7 @@ Thumbs.db
 
 /templates/space/Waxholm_Space_Atlas_SD_Rat_Brain/
 
+# Python virtual environments
+.venv/
+.venv*/
+venv/
