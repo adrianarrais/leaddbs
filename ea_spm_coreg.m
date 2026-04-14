@@ -71,6 +71,7 @@ if doreslice
     matlabbatch{1}.spm.spatial.coreg.estwrite.roptions.wrap = [0 0 0];
     matlabbatch{1}.spm.spatial.coreg.estwrite.roptions.mask = 0;
     matlabbatch{1}.spm.spatial.coreg.estwrite.roptions.prefix = 'r';
+    spm_jobman('initcfg');
     spm_jobman('run',{matlabbatch});
 else
     matlabbatch{1}.spm.spatial.coreg.estimate.ref = {fixed};
