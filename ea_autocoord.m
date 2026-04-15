@@ -219,20 +219,11 @@ if ~strcmp(options.patientname,'No Patient Selected') && ~isempty(options.patien
 
     if options.coregmr.do
         % Coregister pre-op MRIs to pre-op anchor image
-<<<<<<< Updated upstream
-=======
 
         % If doing coregistration and there is Dwi -> Create b0 and FA 
         options = ea_getptopts(options.subj.subjDir, options);
-        % Output that dwi identified :) 
         if isfile(fullfile(options.subj.subjDir,options.prefs.dti))
             directory = [options.root, options.patientname, filesep];
-
-            % For BIDS-style datasets in derivatives/leaddbs, copy DWI
-            % from rawdata into preprocessing/dwi and set prefs.*.
-            if contains(directory, 'derivatives') || contains(directory, 'leaddbs')
-                options = ea_prepare_dti_bids(options);
-            end
 
             % Ensure a b0 image exists at options.prefs.b0 (or its BIDS
             % variant) before fiber tracking / normalization. This will
@@ -260,7 +251,7 @@ if ~strcmp(options.patientname,'No Patient Selected') && ~isempty(options.patien
                 warning('Lead-Connectome: FA creation / FA->anat coregistration failed (%s). Proceeding.', MEfa.message);
             end
         end
->>>>>>> Stashed changes
+
         % TODO: coreg_fa disabled currently
         coregDone = ea_coregpreopmr(options);
     end

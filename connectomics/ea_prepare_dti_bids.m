@@ -44,7 +44,6 @@ try
         targetDwi = fullfile(derivDwiDir, [dwiBaseNameNorm, '.nii']);
 
         if ~exist(targetDwi, 'file')
-            disp(['Copying DWI from rawdata: ', dwiBaseName, ' -> ', dwiBaseNameNorm]);
             if strcmp(dwiExt, '.gz')
                 % Gunzip to temp name then rename if normalization was needed
                 gunzip(rawDwiPath, derivDwiDir);

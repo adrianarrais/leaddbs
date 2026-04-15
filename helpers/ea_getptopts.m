@@ -38,7 +38,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
     % Set subj BIDS struct
     try
         options.subj = bids.getSubj(subjId, options.modality);
-    
+
         % Set primary template
         subjAnchor = regexprep(options.subj.AnchorModality, '[^\W_]+_', '');
         if ismember(subjAnchor, fieldnames(bids.spacedef.norm_mapping))
@@ -46,7 +46,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
         else
             options.primarytemplate = bids.spacedef.misfit_template;
         end
-    
+
         % Set elmodel and elspec
         recon = bids.getRecon(subjId);
     catch
@@ -81,31 +81,31 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
     end
 
     options.bids=bids; % store bidsfetcher obj within options.
-    
+
     % Provide classic fields for Lead-Connectome compatibility
     try
         options.root = [fileparts(options.subj.subjDir), filesep];
         [~, options.patientname] = fileparts(options.subj.subjDir);
     catch
     end
-    
+
     % Point to preprocessed BIDS files if they exist
     try
         preprocFuncDir = fullfile(options.subj.subjDir, 'preprocessing', 'func');
         preprocDwiDir = fullfile(options.subj.subjDir, 'preprocessing', 'dwi');
         preprocAnatDir = fullfile(options.subj.subjDir, 'preprocessing', 'anat');
-        
+
         % rs-fMRI: Copy from rawdata to preprocessing/func if not present
         if ~isfolder(preprocFuncDir)
             mkdir(preprocFuncDir);
         end
-        
+
         % Search for BOLD in preprocessing/func first
         boldFiles = dir(fullfile(preprocFuncDir, '*_bold.nii'));
         if isempty(boldFiles)
             boldFiles = dir(fullfile(preprocFuncDir, '*_bold.nii.gz'));
         end
-        
+
         % If not found, copy from rawdata
         if isempty(boldFiles)
             % Navigate from derivatives/leaddbs/sub-XXX to rawdata/sub-XXX
@@ -117,7 +117,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             if isempty(rawBoldFiles)
                 rawBoldFiles = dir(fullfile(rawDataDir, '**', '*_bold.nii'));
             end
-            
+
             if ~isempty(rawBoldFiles)
                 % Copy first BOLD file
                 srcBold = fullfile(rawBoldFiles(1).folder, rawBoldFiles(1).name);
@@ -126,7 +126,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
                     [~, boldBaseName] = fileparts(boldBaseName); % remove .nii from .nii.gz
                 end
                 targetBold = fullfile(preprocFuncDir, [boldBaseName, '.nii']);
-                
+
                 if ~exist(targetBold, 'file')
                     fprintf('Copying rs-fMRI data from rawdata to preprocessing/func...\n');
                     if endsWith(srcBold, '.gz')
@@ -139,11 +139,11 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
                     end
                     fprintf('rs-fMRI data copied successfully.\n');
                 end
-                
+
                 boldFiles = dir(fullfile(preprocFuncDir, '*_bold.nii'));
             end
         end
-        
+
         % Set rest and pprest paths
         if ~isempty(boldFiles)
             fullBoldPath = fullfile(boldFiles(1).folder, boldFiles(1).name);
@@ -155,44 +155,41 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
                 options.prefs.pprest = strrep(srFile, [options.subj.subjDir, filesep], '');
             end
         end
-        
+
         % DWI: Copy from rawdata to preprocessing/dwi with BIDS-compliant names if not present
         derivDwiDir = fullfile(options.subj.subjDir, 'preprocessing', 'dwi');
         if ~isfolder(derivDwiDir)
             mkdir(derivDwiDir);
         end
-        
+
         % First check if DWI already exists in preprocessing/dwi
-<<<<<<< Updated upstream
         dwiFiles = dir(fullfile(derivDwiDir, '*_dwi.nii'));
-        
-=======
+
         % Accept both BIDS standard '_dwi' and legacy '_DTI' suffixes
         dwiFiles = [dir(fullfile(derivDwiDir, '*_dwi.nii')); ...
-                    dir(fullfile(derivDwiDir, '*_DTI.nii'))];
+            dir(fullfile(derivDwiDir, '*_DTI.nii'))];
 
->>>>>>> Stashed changes
         if isempty(dwiFiles)
             % If not found, look in rawdata (search recursively)
             % Extract dataset root as everything before the 'derivatives' folder
             datasetRoot = regexp(options.subj.subjDir, ['^.*(?=\', filesep, 'derivatives)'], 'match', 'once');
             rawDataDir = fullfile(datasetRoot, 'rawdata', ['sub-', options.subj.subjId]);
             rawDwiFiles = [dir(fullfile(rawDataDir, '**', '*_dwi.nii.gz')); ...
-                           dir(fullfile(rawDataDir, '**', '*_DTI.nii.gz'))];
+                dir(fullfile(rawDataDir, '**', '*_DTI.nii.gz'))];
             if isempty(rawDwiFiles)
                 rawDwiFiles = [dir(fullfile(rawDataDir, '**', '*_dwi.nii')); ...
-                               dir(fullfile(rawDataDir, '**', '*_DTI.nii'))];
+                    dir(fullfile(rawDataDir, '**', '*_DTI.nii'))];
             end
         else
             % DWI already in preprocessing - use it
             rawDwiFiles = [];
         end
-        
+
         if ~isempty(dwiFiles)
             % DWI already exists in preprocessing/dwi - set paths directly
             dwiPath = fullfile(dwiFiles(1).folder, dwiFiles(1).name);
             [~, dwiBaseName] = fileparts(dwiPath);
-            
+
             options.prefs.dti = strrep(dwiPath, [options.subj.subjDir, filesep], '');
             options.prefs.bval = fullfile('preprocessing', 'dwi', [dwiBaseName, '.bval']);
             options.prefs.bvec = fullfile('preprocessing', 'dwi', [dwiBaseName, '.bvec']);
@@ -207,12 +204,10 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             if strcmp(dwiExt, '.gz')
                 [~, dwiBaseName] = fileparts(dwiBaseName);
             end
-<<<<<<< Updated upstream
-            
+
             % Target BIDS-compliant file in derivatives/preprocessing/dwi/
             targetDwi = fullfile(derivDwiDir, [dwiBaseName, '.nii']);
-            
-=======
+
 
             % Normalize suffix to '_dwi' regardless of source naming (_DTI -> _dwi)
             dwiBaseNameNorm = regexprep(dwiBaseName, '_DTI$', '_dwi');
@@ -220,7 +215,6 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             % Target BIDS-compliant file in derivatives/preprocessing/dwi/
             targetDwi = fullfile(derivDwiDir, [dwiBaseNameNorm, '.nii']);
 
->>>>>>> Stashed changes
             if ~exist(targetDwi, 'file')
                 disp(['Copying DWI from rawdata: ', dwiBaseName, ' -> ', dwiBaseNameNorm]);
                 if strcmp(dwiExt, '.gz')
@@ -234,8 +228,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
                     copyfile(rawDwiPath, targetDwi);
                 end
             end
-<<<<<<< Updated upstream
-            
+
             % Copy .bval and .bvec
             rawDwiDir = rawDwiFiles(1).folder;
             rawDwiName = dwiBaseName;  % Already cleaned above
@@ -243,8 +236,6 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             rawBvec = fullfile(rawDwiDir, [rawDwiName, '.bvec']);
             targetBval = fullfile(derivDwiDir, [dwiBaseName, '.bval']);
             targetBvec = fullfile(derivDwiDir, [dwiBaseName, '.bvec']);
-            
-=======
 
             % Copy .bval and .bvec (source uses original name, target uses normalized)
             rawDwiDir = rawDwiFiles(1).folder;
@@ -253,14 +244,13 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             targetBval = fullfile(derivDwiDir, [dwiBaseNameNorm, '.bval']);
             targetBvec = fullfile(derivDwiDir, [dwiBaseNameNorm, '.bvec']);
 
->>>>>>> Stashed changes
             if exist(rawBval, 'file') && ~exist(targetBval, 'file')
                 copyfile(rawBval, targetBval);
             end
             if exist(rawBvec, 'file') && ~exist(targetBvec, 'file')
                 copyfile(rawBvec, targetBvec);
             end
-            
+
             % Set prefs to BIDS paths (relative to subject dir)
             if exist(targetDwi, 'file')
                 options.prefs.dti = strrep(targetDwi, [options.subj.subjDir, filesep], '');
@@ -280,14 +270,14 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
         if ~isfolder(preprocAnatDir)
             mkdir(preprocAnatDir);
         end
-        
+
         % Search for anatomical files in preprocessing/anat first
         % EXCLUDE SPM segmentation files (c1, c2, c3 prefix) and preprocessed files
         anatFiles = dir(fullfile(preprocAnatDir, '*_T1w.nii'));
         if isempty(anatFiles)
             anatFiles = dir(fullfile(preprocAnatDir, '*_T2w.nii'));
         end
-        
+
         % Filter out preprocessed versions immediately
         if ~isempty(anatFiles)
             validAnatFiles = [];
@@ -299,7 +289,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             end
             anatFiles = validAnatFiles;
         end
-        
+
         % If not found, copy from rawdata
         if isempty(anatFiles)
             fprintf('No anatomical files found in preprocessing/anat, checking rawdata...\n');
@@ -309,7 +299,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             datasetRoot = fileparts(derivDir); % dataset root
             rawDataDir = fullfile(datasetRoot, 'rawdata', ['sub-', options.subj.subjId]);
             fprintf('Looking in: %s\n', rawDataDir);
-            
+
             rawAnatFiles = dir(fullfile(rawDataDir, '**', '*_T1w.nii.gz'));
             if isempty(rawAnatFiles)
                 rawAnatFiles = dir(fullfile(rawDataDir, '**', '*_T1w.nii'));
@@ -320,7 +310,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             if isempty(rawAnatFiles)
                 rawAnatFiles = dir(fullfile(rawDataDir, '**', '*_T2w.nii'));
             end
-            
+
             if ~isempty(rawAnatFiles)
                 srcAnat = fullfile(rawAnatFiles(1).folder, rawAnatFiles(1).name);
                 [~, anatBaseName, anatExt] = fileparts(rawAnatFiles(1).name);
@@ -328,7 +318,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
                     [~, anatBaseName] = fileparts(anatBaseName);
                 end
                 targetAnat = fullfile(preprocAnatDir, [anatBaseName, '.nii']);
-                
+
                 fprintf('Copying anatomical data from rawdata to preprocessing/anat...\n');
                 if endsWith(srcAnat, '.gz')
                     copyfile(srcAnat, [targetAnat, '.gz']);
@@ -338,14 +328,14 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
                     copyfile(srcAnat, targetAnat);
                 end
                 fprintf('Anatomical data copied successfully.\n');
-                
+
                 anatFiles = dir(fullfile(preprocAnatDir, '*_T1w.nii'));
                 if isempty(anatFiles)
                     anatFiles = dir(fullfile(preprocAnatDir, '*_T2w.nii'));
                 end
             end
         end
-        
+
         % Filter out SPM tissue class files (c1, c2, c3, etc.) and preprocessed files (r*, sr*, mean*)
         if ~isempty(anatFiles)
             validFiles = {};
@@ -360,7 +350,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
                 options.prefs.prenii_unnormalized = strrep(validFiles{1}, [options.subj.subjDir, filesep], '');
             end
         end
-        
+
         if ~isfield(options.prefs, 'prenii_unnormalized') || isempty(options.prefs.prenii_unnormalized)
             % No preprocessed anat found - try coregistration/anat directory
             coregAnatDir = fullfile(options.subj.subjDir, 'coregistration', 'anat');
@@ -378,7 +368,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
     catch ME
         warning('Failed to set BIDS anatomical path: %s', ME.message);
     end
-    
+
     % Final check: Ensure b0 path is set correctly (fallback if above logic failed)
     if ~isfield(options.prefs, 'b0') || strcmp(options.prefs.b0, 'b0.nii')
         % BIDS path not set, try to find b0 file

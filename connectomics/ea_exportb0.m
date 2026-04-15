@@ -1,6 +1,7 @@
 function ea_exportb0(options)
 
-b0threshold = 10;
+% Add here function to detect b0 automatically
+b0threshold = 100;
 
 disp('Export b0...');
 bvals=load([options.root,options.patientname,filesep,options.prefs.bval]);
