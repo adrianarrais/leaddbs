@@ -219,6 +219,48 @@ if ~strcmp(options.patientname,'No Patient Selected') && ~isempty(options.patien
 
     if options.coregmr.do
         % Coregister pre-op MRIs to pre-op anchor image
+<<<<<<< Updated upstream
+=======
+
+        % If doing coregistration and there is Dwi -> Create b0 and FA 
+        options = ea_getptopts(options.subj.subjDir, options);
+        % Output that dwi identified :) 
+        if isfile(fullfile(options.subj.subjDir,options.prefs.dti))
+            directory = [options.root, options.patientname, filesep];
+
+            % For BIDS-style datasets in derivatives/leaddbs, copy DWI
+            % from rawdata into preprocessing/dwi and set prefs.*.
+            if contains(directory, 'derivatives') || contains(directory, 'leaddbs')
+                options = ea_prepare_dti_bids(options);
+            end
+
+            % Ensure a b0 image exists at options.prefs.b0 (or its BIDS
+            % variant) before fiber tracking / normalization. This will
+            % create preprocessing/dwi/*_b0.nii if it is still missing.
+            try
+                ea_exportb0(options);
+            catch MEb0
+                warning('Lead-Connectome DWI preparation: automatic b0 export failed (%s). Proceeding with existing configuration.', MEb0.message);
+            end
+
+            % Ensure that a B0->T1 coregistration transform exists so
+            % that warped parcellations (b0wAtlas) and fiber
+            % normalization share a consistent affine relationship
+            % between diffusion space and anatomy.
+            try
+                options = ea_ensure_b0_coreg(options);
+            catch MEcoreg
+                warning('Lead-Connectome DWI preparation: automatic B0->T1 coreg failed (%s). Proceeding with existing configuration.', MEcoreg.message);
+            end
+
+            % Create FA from DWI and FA coregistered to anat in coregistration/anat
+            try
+                options = ea_ensure_fa_and_fa2anat(options);
+            catch MEfa
+                warning('Lead-Connectome: FA creation / FA->anat coregistration failed (%s). Proceeding.', MEfa.message);
+            end
+        end
+>>>>>>> Stashed changes
         % TODO: coreg_fa disabled currently
         coregDone = ea_coregpreopmr(options);
     end
