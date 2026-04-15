@@ -39,6 +39,39 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
     try
         options.subj = bids.getSubj(subjId, options.modality);
 
+        % --- Register submarine folder (if it exists) ---
+        submarineBase = fullfile(options.subj.subjDir, 'submarine');
+
+        if exist(submarineBase, 'dir')
+
+            % Ensure submarine struct exists
+            if ~isfield(options.subj, 'submarine') || isempty(options.subj.submarine)
+                options.subj.submarine = struct();
+            end
+
+            % Store base submarine directory
+            options.subj.submarineDir = submarineBase;
+
+            % Ensure atlases container exists
+            if ~isfield(options.subj.submarine, 'atlases') || isempty(options.subj.submarine.atlases)
+                options.subj.submarine.atlases = struct();
+            end
+
+            % List atlas subfolders
+            d = dir(submarineBase);
+            d = d([d.isdir] & ~ismember({d.name}, {'.','..'}));
+
+            for k = 1:numel(d)
+                atlas_name  = d(k).name;
+                atlasField = matlab.lang.makeValidName(atlas_name);
+
+                % Register atlas directory
+                options.subj.submarine.atlases.(atlasField).dir = ...
+                    fullfile(submarineBase, atlas_name);
+            end
+        end
+
+
         % Set primary template
         subjAnchor = regexprep(options.subj.AnchorModality, '[^\W_]+_', '');
         if ismember(subjAnchor, fieldnames(bids.spacedef.norm_mapping))
@@ -94,6 +127,22 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
         preprocFuncDir = fullfile(options.subj.subjDir, 'preprocessing', 'func');
         preprocDwiDir = fullfile(options.subj.subjDir, 'preprocessing', 'dwi');
         preprocAnatDir = fullfile(options.subj.subjDir, 'preprocessing', 'anat');
+
+        % --- Register preprocessing dirs in options.subj.preproc ---
+        if ~isfield(options.subj,'preproc') || isempty(options.subj.preproc)
+            options.subj.preproc = struct();
+        end
+
+        % keep any existing anat field (often set by bids.getSubj)
+        if ~isfield(options.subj.preproc,'anat')
+            options.subj.preproc.anat = struct();
+        end
+        options.subj.preproc.anat.dir = preprocAnatDir;
+
+        % add missing ones
+        options.subj.preproc.dwi  = struct('dir', preprocDwiDir);
+        options.subj.preproc.func = struct('dir', preprocFuncDir);
+
 
         % rs-fMRI: Copy from rawdata to preprocessing/func if not present
         if ~isfolder(preprocFuncDir)
@@ -165,20 +214,12 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
         % First check if DWI already exists in preprocessing/dwi
         dwiFiles = dir(fullfile(derivDwiDir, '*_dwi.nii'));
 
-        % Accept both BIDS standard '_dwi' and legacy '_DTI' suffixes
-        dwiFiles = [dir(fullfile(derivDwiDir, '*_dwi.nii')); ...
-            dir(fullfile(derivDwiDir, '*_DTI.nii'))];
-
         if isempty(dwiFiles)
             % If not found, look in rawdata (search recursively)
-            % Extract dataset root as everything before the 'derivatives' folder
-            datasetRoot = regexp(options.subj.subjDir, ['^.*(?=\', filesep, 'derivatives)'], 'match', 'once');
-            rawDataDir = fullfile(datasetRoot, 'rawdata', ['sub-', options.subj.subjId]);
-            rawDwiFiles = [dir(fullfile(rawDataDir, '**', '*_dwi.nii.gz')); ...
-                dir(fullfile(rawDataDir, '**', '*_DTI.nii.gz'))];
+            rawDataDir = fullfile(fileparts(fileparts(options.subj.subjDir)), 'rawdata', ['sub-', options.subj.subjId]);
+            rawDwiFiles = dir(fullfile(rawDataDir, '**', '*_dwi.nii.gz'));
             if isempty(rawDwiFiles)
-                rawDwiFiles = [dir(fullfile(rawDataDir, '**', '*_dwi.nii')); ...
-                    dir(fullfile(rawDataDir, '**', '*_DTI.nii'))];
+                rawDwiFiles = dir(fullfile(rawDataDir, '**', '*_dwi.nii'));
             end
         else
             % DWI already in preprocessing - use it
@@ -195,8 +236,22 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             options.prefs.bvec = fullfile('preprocessing', 'dwi', [dwiBaseName, '.bvec']);
             options.prefs.b0 = fullfile('preprocessing', 'dwi', [dwiBaseName, '_b0.nii']);
             options.prefs.fa = fullfile('preprocessing', 'dwi', [dwiBaseName, '_fa.nii']);
+            options.prefs.fa2anat = fullfile('coregistration', 'anat', [options.patientname, '_space-anchorNative_dwi_fa.nii']);
             options.prefs.FTR_unnormalized = fullfile('connectomics', 'dMRI', 'FTR.mat');
+            
             options.prefs.FTR_normalized   = fullfile('connectomics', 'dMRI', 'FTR_normalized.mat');
+
+            % --- Store in options.subj.preproc.dwi as well ---
+            options.subj.preproc.dwi.dwi = dwiPath;
+
+            % If you want absolute bval/bvec too
+            options.subj.preproc.dwi.bval = fullfile(options.subj.subjDir, options.prefs.bval);
+            options.subj.preproc.dwi.bvec = fullfile(options.subj.subjDir, options.prefs.bvec);
+
+            % Derived files (may not exist yet, but good to define expected locations)
+            options.subj.preproc.dwi.b0 = fullfile(options.subj.subjDir, options.prefs.b0);
+            options.subj.preproc.dwi.fa = fullfile(options.subj.subjDir, options.prefs.fa);
+
         elseif ~isempty(rawDwiFiles)
             % Use first DWI run found
             rawDwiPath = fullfile(rawDwiFiles(1).folder, rawDwiFiles(1).name);
@@ -208,23 +263,12 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             % Target BIDS-compliant file in derivatives/preprocessing/dwi/
             targetDwi = fullfile(derivDwiDir, [dwiBaseName, '.nii']);
 
-
-            % Normalize suffix to '_dwi' regardless of source naming (_DTI -> _dwi)
-            dwiBaseNameNorm = regexprep(dwiBaseName, '_DTI$', '_dwi');
-
-            % Target BIDS-compliant file in derivatives/preprocessing/dwi/
-            targetDwi = fullfile(derivDwiDir, [dwiBaseNameNorm, '.nii']);
-
             if ~exist(targetDwi, 'file')
-                disp(['Copying DWI from rawdata: ', dwiBaseName, ' -> ', dwiBaseNameNorm]);
                 if strcmp(dwiExt, '.gz')
-                    % Gunzip then rename if normalization was needed
+                    % Gunzip
                     gunzip(rawDwiPath, derivDwiDir);
-                    if ~strcmp(dwiBaseName, dwiBaseNameNorm)
-                        movefile(fullfile(derivDwiDir, [dwiBaseName, '.nii']), targetDwi);
-                    end
                 else
-                    % Copy with normalized name
+                    % Copy
                     copyfile(rawDwiPath, targetDwi);
                 end
             end
@@ -236,13 +280,6 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             rawBvec = fullfile(rawDwiDir, [rawDwiName, '.bvec']);
             targetBval = fullfile(derivDwiDir, [dwiBaseName, '.bval']);
             targetBvec = fullfile(derivDwiDir, [dwiBaseName, '.bvec']);
-
-            % Copy .bval and .bvec (source uses original name, target uses normalized)
-            rawDwiDir = rawDwiFiles(1).folder;
-            rawBval = fullfile(rawDwiDir, [dwiBaseName, '.bval']);
-            rawBvec = fullfile(rawDwiDir, [dwiBaseName, '.bvec']);
-            targetBval = fullfile(derivDwiDir, [dwiBaseNameNorm, '.bval']);
-            targetBvec = fullfile(derivDwiDir, [dwiBaseNameNorm, '.bvec']);
 
             if exist(rawBval, 'file') && ~exist(targetBval, 'file')
                 copyfile(rawBval, targetBval);
@@ -257,8 +294,8 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
                 options.prefs.bval = strrep(targetBval, [options.subj.subjDir, filesep], '');
                 options.prefs.bvec = strrep(targetBvec, [options.subj.subjDir, filesep], '');
                 % b0 and fa will be generated in same directory
-                options.prefs.b0 = fullfile('preprocessing', 'dwi', [dwiBaseNameNorm, '_b0.nii']);
-                options.prefs.fa = fullfile('preprocessing', 'dwi', [dwiBaseNameNorm, '_fa.nii']);
+                options.prefs.b0 = fullfile('preprocessing', 'dwi', [dwiBaseName, '_b0.nii']);
+                options.prefs.fa = fullfile('preprocessing', 'dwi', [dwiBaseName, '_fa.nii']);
                 % Fiber tracking output (BIDS: stored in connectomics/dMRI/)
                 options.prefs.FTR_unnormalized = fullfile('connectomics', 'dMRI', 'FTR.mat');
                 options.prefs.FTR_normalized   = fullfile('connectomics', 'dMRI', 'FTR_normalized.mat');
