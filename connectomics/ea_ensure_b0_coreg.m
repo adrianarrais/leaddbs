@@ -60,14 +60,14 @@ if ~isempty(hit)
     fprintf('ea_ensure_b0_coreg: Found existing B0<->T1 transform: %s\n', hit);
     return;
 end
+
 % No existing transform found -> run coregistration once
 fprintf('ea_ensure_b0_coreg: No B0->T1 transform found. Running coregistration now...\n');
 
-% Build output filename in preprocessing/anat
-outName = sprintf('%s2%s_%s.mat', b0Name, anatName, lower(regexp(options.coregmr.method, '^[^\s\(]+', 'match', 'once')));
-outDir  = fullfile(directory, 'coregistration', 'anat');
-if ~isfolder(outDir), outDir = directory; end
-ofile   = fullfile(outDir, [b0Name, '2', anatName, '.nii']);
+% Build BIDS-style output filename for the coregistered B0 in coregistration/anat
+outDir = fullfile(directory, 'coregistration', 'anat');
+ea_mkdir(outDir);
+ofile  = fullfile(outDir, [options.patientname, '_space-anchorNative_dwi_b0.nii']);
 
 coregTransformDir = fullfile(directory, 'coregistration', 'transformations');
 ea_mkdir(coregTransformDir);
