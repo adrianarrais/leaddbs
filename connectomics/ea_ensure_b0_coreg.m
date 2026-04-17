@@ -65,14 +65,26 @@ fprintf('ea_ensure_b0_coreg: No B0->T1 transform found. Running coregistration n
 
 % Build output filename in preprocessing/anat
 outName = sprintf('%s2%s_%s.mat', b0Name, anatName, lower(regexp(options.coregmr.method, '^[^\s\(]+', 'match', 'once')));
-outDir  = fullfile(directory, 'preprocessing', 'anat');
+outDir  = fullfile(directory, 'coregistration', 'anat');
 if ~isfolder(outDir), outDir = directory; end
 ofile   = fullfile(outDir, [b0Name, '2', anatName, '.nii']);
+
+coregTransformDir = fullfile(directory, 'coregistration', 'transformations');
+ea_mkdir(coregTransformDir);
 
 try
     affinefile = ea_coregimages(options, b0Path, anatPath, ofile, {}, 1, [], 1);
     if ~isempty(affinefile)
-        fprintf('ea_ensure_b0_coreg: Created B0->T1 transform: %s\n', affinefile{1});
+        % Move transform file from preprocessing to coregistration/transformations
+        for k = 1:numel(affinefile)
+            if isfile(affinefile{k})
+                [~, tfname, tfext] = fileparts(affinefile{k});
+                dest = fullfile(coregTransformDir, [tfname, tfext]);
+                movefile(affinefile{k}, dest);
+                affinefile{k} = dest;
+            end
+        end
+        fprintf('ea_ensure_b0_coreg: B0->T1 transforms saved to: %s\n', coregTransformDir);
     else
         fprintf('ea_ensure_b0_coreg: ea_coregimages did not return a transform file.\n');
     end
