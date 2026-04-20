@@ -56,7 +56,7 @@ anatName = regexprep(anatName, '\.nii(\.gz)?$', '');
 % Search for existing transform B0->T1
 hit = ea_find_b0_t1_transform(directory, options.coregmr.method);
 
-if ~isempty(hit)
+if ~isempty(hit) 
     fprintf('ea_ensure_b0_coreg: Found existing B0<->T1 transform: %s\n', hit);
     return;
 end
@@ -67,7 +67,7 @@ fprintf('ea_ensure_b0_coreg: No B0->T1 transform found. Running coregistration n
 % Build BIDS-style output filename for the coregistered B0 in coregistration/anat
 outDir = fullfile(directory, 'coregistration', 'anat');
 ea_mkdir(outDir);
-ofile  = fullfile(outDir, [options.patientname, '_space-anchorNative_dwi_b0.nii']);
+ofile  = fullfile(outDir, ['sub-', options.subj.subjId, '_ses-preop_space-anchorNative_dwi_b0.nii']);
 
 coregTransformDir = fullfile(directory, 'coregistration', 'transformations');
 ea_mkdir(coregTransformDir);

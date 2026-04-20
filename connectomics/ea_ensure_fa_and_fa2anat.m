@@ -36,11 +36,9 @@ end
 isBIDS = contains(directory, 'derivatives') || contains(directory, 'leaddbs');
 if isBIDS
     coregAnatDir = fullfile(directory, 'coregistration', 'anat');
-    if ~isfolder(coregAnatDir)
-        mkdir(coregAnatDir);
-    end
-    % BIDS-style name: sub-XXX_space-anchorNative_dwi_fa.nii
-    fa2anatName = [options.patientname, '_space-anchorNative_dwi_fa.nii'];
+    ea_mkdir(coregAnatDir);
+    % BIDS-style name: sub-XXX_ses-preop_space-anchorNative_dwi_fa.nii
+    fa2anatName = ['sub-', options.subj.subjId, '_ses-preop_space-anchorNative_dwi_fa.nii'];
     fa2anatPath = fullfile(coregAnatDir, fa2anatName);
     fa2anatRel  = fullfile('coregistration', 'anat', fa2anatName);
 else
@@ -74,75 +72,122 @@ if ~isfile(anatPath)
     return;
 end
 
-% ── 5. Find the B0->T1 forward transform ─────────────────────────────────
-transform = find_b0_t1_forward_transform(directory, options.coregmr.method);
+% Find the B0->T1 forward transform 
+transform = find_b0_t1_forward_transform(directory, options);
 if isempty(transform)
-    warning(['ea_ensure_fa: B0->T1 forward transform not found. ', ...
-             'Ensure ea_ensure_b0_coreg ran successfully.']);
+    warning(['ea_ensure_fa_and_fa2anat: B0->T1 forward transform not found. ', ...
+             'Ensure B0 coregistration ran successfully.']);
     return;
 end
-fprintf('ea_ensure_fa: Using B0->T1 transform: %s\n', transform);
+fprintf('ea_ensure_fa_and_fa2anat: Using B0->T1 transform: %s\n', transform);
 
-
- % ── 6. Apply transform to FA ─────────────────────────────────────────────
-fprintf('ea_ensure_fa: Applying B0->T1 transform to FA...\n');
+% Apply transform to FA 
+fprintf('ea_ensure_fa_and_fa2anat: Applying B0->T1 transform to FA...\n');
 try
     ea_apply_coregistration(anatPath, faPath, fa2anatPath, transform);
-    fprintf('ea_ensure_fa: FA in T1 space saved: %s\n', fa2anatPath);
+    fprintf('ea_ensure_fa_and_fa2anat: FA in T1 space saved: %s\n', fa2anatPath);
+    if isBIDS
+        options.prefs.fa2anat = fa2anatRel;
+    end
 catch ME
-    warning('ea_ensure_fa: Failed to apply transform to FA: %s', ME.message);
+    warning('ea_ensure_fa_and_fa2anat: Failed to apply transform to FA: %s', ME.message);
 end
 
-function hit = find_b0_t1_forward_transform(directory, methodHint)
-% Search common locations for a B0->T1 forward transform file.
-% Returns the full path of the best candidate, or '' if none found.
+function hit = find_b0_t1_forward_transform(directory, options)
+% Return full path to a B0->T1 forward transform file, or '' if none found.
 %
-% "Forward" means B0/DWI -> T1, not the inverse (T1 -> B0).
+% Strategy:
+%  1. Use options.subj.coreg.transform.dwi_b0.forwardBaseName directly
+%     (most reliable — already populated by ea_coregpreopmr).
+%  2. Fall back to a scored file-system search in coregistration/transformations/.
 
-if nargin < 2 || isempty(methodHint), methodHint = ''; end
-% Extract the first word of the method string (e.g. 'SPM' from 'SPM (Friston 2007)')
-methodHint = lower(regexp(methodHint, '^[^\s\(]+', 'match', 'once'));
+hit = '';
 
-searchDir = fullfile(directory, 'coregistration', 'transformations');
+% Extract method string
+if isstruct(options) && isfield(options, 'coregmr') && isfield(options.coregmr, 'method')
+    method = options.coregmr.method;
+elseif ischar(options)
+    method = options;
+else
+    method = '';
+end
+methodHint = lower(regexp(method, '^[^\s\(]+', 'match', 'once'));
 
-exts = {'*.mat', '*.h5', '*.txt'};
-cands = {};
+% ── 1. Struct-based lookup (preferred) ───────────────────────────────────
+if isstruct(options) && isfield(options, 'subj') && ...
+        isfield(options.subj, 'coreg') && ...
+        isfield(options.subj.coreg, 'transform') && ...
+        isfield(options.subj.coreg.transform, 'dwi_b0')
 
-if isfolder(searchDir)
-    for e = 1:numel(exts)
-        d = dir(fullfile(searchDir,'**',exts{e}));
-        for k = 1:numel(d)
-            cands{end+1} = fullfile(d(k).folder, d(k).name);
+    base = options.subj.coreg.transform.dwi_b0.forwardBaseName;
+
+    % Map method string to the transform file suffix saved by ea_coregpreopmr
+    switch methodHint
+        case 'spm'
+            suffixes = {'spm.mat'};
+        case 'ants'
+            suffixes = {'ants.mat'};   % ITK affine – correct input for antsApplyTransforms
+        case {'flirt', 'flirtbbr', 'bbr', 'fsl'}
+            suffixes = {'flirt.mat'};
+        case 'brainsfit'
+            suffixes = {'brainsfit.mat'};
+        otherwise
+            suffixes = {'spm.mat', 'ants.mat', 'flirt.mat', 'brainsfit.mat'};
+    end
+
+    for k = 1:numel(suffixes)
+        candidate = [base, suffixes{k}];
+        if isfile(candidate)
+            hit = candidate;
+            return;
         end
     end
 end
 
-if isempty(cands), hit = ''; return; end
+% ── 2. File-system search fallback ───────────────────────────────────────
+searchDir = fullfile(directory, 'coregistration', 'transformations');
+if ~isfolder(searchDir), return; end
+
+exts  = {'*.mat', '*.h5', '*.txt'};
+cands = {};
+for e = 1:numel(exts)
+    d = dir(fullfile(searchDir, '**', exts{e}));
+    for k = 1:numel(d)
+        cands{end+1} = fullfile(d(k).folder, d(k).name); %#ok<AGROW>
+    end
+end
+if isempty(cands), return; end
 
 bestScore = -Inf;
-hit = '';
 for i = 1:numel(cands)
     [~, name, ext] = fileparts(cands{i});
     fname = lower([name, ext]);
 
-    % Must reference both B0/DWI and T1/anat
+    % Must reference both B0/DWI and T1/anat side
     hasB0   = contains(fname, 'b0') || contains(fname, 'dwi');
-    hasAnat = contains(fname, 't1') || contains(fname, 'anat');
+    hasAnat = contains(fname, 't1') || contains(fname, 'anat') || ...
+              contains(fname, 'anchor') || contains(fname, 'native');
     if ~hasB0 || ~hasAnat, continue; end
 
-    % Forward direction: file should start with the B0/DWI side, not T1
-    % (inverse would be e.g. "anat2b0_spm.mat" or "t12b0_spm.mat")
-    isInverse = startsWith(fname, 'anat') || startsWith(fname, 't1');
+    % Exclude inverse transforms
+    isInverse = startsWith(fname, 'anat') || startsWith(fname, 't1') || ...
+                contains(fname, 'from-anchor') || contains(fname, 'from-t1');
     if isInverse, continue; end
 
-    score = 4; % baseline for a plausible B0->T1 forward candidate
+    % Exclude the ants44 / spm44 / flirt44 convenience copies — those are
+    % MATLAB-format 4x4 matrices, not suitable inputs for the apply functions.
+    if regexp(fname, '\d+\.mat$'), continue; end
+
+    score = 4; % baseline
 
     if ~isempty(methodHint) && contains(fname, methodHint)
         score = score + 1;
     end
 
-    % Validate .mat: must contain at least one 4x4 numeric matrix
-    if strcmp(ext, '.mat')
+    % For MATLAB-native .mat files (SPM), verify they contain a 4x4 matrix.
+    % ANTs ITK .mat files are binary and cannot be loaded by MATLAB — don't
+    % penalise them; their name already identifies them.
+    if strcmp(ext, '.mat') && ~contains(fname, 'ants')
         try
             S = load(cands{i});
             has4x4 = any(structfun(@(v) isnumeric(v) && isequal(size(v), [4 4]), S));
