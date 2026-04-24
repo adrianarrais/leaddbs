@@ -54,23 +54,36 @@ if isfile(fa2anatPath)
     return;
 end
 
-% Anatomical reference
-anatPath = fullfile(directory, options.prefs.prenii_unnormalized);
-if ~isfile(anatPath)
-    % Try preprocessing/anat or coregistration/anat
-    for subdir = {'preprocessing/anat', 'coregistration/anat'}
-        d = dir(fullfile(directory, subdir{1}, '*T1w.nii'));
-        if isempty(d), d = dir(fullfile(directory, subdir{1}, '*T2w.nii')); end
-        if ~isempty(d)
-            anatPath = fullfile(d(1).folder, d(1).name);
-            break;
+% Use the same anchor normalization will use; prenii_unnormalized can
+% point to a different grid and cause a mismatch later.
+anatPath = '';
+if isfield(options.subj.coreg.anat.preop, options.subj.AnchorModality)
+    candidate = options.subj.coreg.anat.preop.(options.subj.AnchorModality);
+    if isfile(candidate)
+        anatPath = candidate;
+    end
+end
+if isempty(anatPath)
+    % Legacy fallback
+    candidate = fullfile(directory, options.prefs.prenii_unnormalized);
+    if isfile(candidate)
+        anatPath = candidate;
+    else
+        for subdir = {'preprocessing/anat', 'coregistration/anat'}
+            d = dir(fullfile(directory, subdir{1}, '*T1w.nii'));
+            if isempty(d), d = dir(fullfile(directory, subdir{1}, '*T2w.nii')); end
+            if ~isempty(d)
+                anatPath = fullfile(d(1).folder, d(1).name);
+                break;
+            end
         end
     end
 end
-if ~isfile(anatPath)
+if isempty(anatPath) || ~isfile(anatPath)
     warning('ea_ensure_fa_and_fa2anat: Anatomical reference not found. Skipping FA->anat coregistration.');
     return;
 end
+fprintf('ea_ensure_fa_and_fa2anat: Using anchor reference: %s\n', anatPath);
 
 % Find the B0->T1 forward transform 
 transform = find_b0_t1_forward_transform(directory, options);
@@ -81,11 +94,11 @@ if isempty(transform)
 end
 fprintf('ea_ensure_fa_and_fa2anat: Using B0->T1 transform: %s\n', transform);
 
-% Apply transform to FA 
+% Apply transform to FA
 fprintf('ea_ensure_fa_and_fa2anat: Applying B0->T1 transform to FA...\n');
 try
     ea_apply_coregistration(anatPath, faPath, fa2anatPath, transform);
-    fprintf('ea_ensure_fa_and_fa2anat: FA in T1 space saved: %s\n', fa2anatPath);
+    
     if isBIDS
         options.prefs.fa2anat = fa2anatRel;
     end

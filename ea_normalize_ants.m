@@ -25,32 +25,47 @@ if ischar(options) % return name of method.
     return
 end
 
+existsFA = isfile(fullfile(options.subj.subjDir, options.prefs.fa));
+if isfield(options.prefs, 'fa2anat') && ~isempty(options.prefs.fa2anat)
+    fa2anatPath = fullfile(options.subj.subjDir, options.prefs.fa2anat);
+else
+    fa2anatPath = '';
+end
+
 usefa = options.prefs.machine.normsettings.ants_usefa;
 usebrainmask=0;
 
 cnt=1;
-
-% TODO: Take care of FA
 spacedef = options.bids.spacedef;
-if usefa && spacedef.hasfa % first put in FA since least important (if both an FA template and an fa2anat file is available)
-    if exist([options.prefs.fa2anat],'file') % recheck if now is present.
-        disp('Including FA information for white-matter normalization.');
-        template{cnt} = [ea_space(options),'fa.nii'];
-        moving{cnt} = [bprfx,options.prefs.fa2anat];
-        weights(cnt) = 0.5;
-        cnt = cnt+1;
-    elseif exist([options.prefs.fa],'file') % recheck if now is present.
-        disp('Including FA information for white-matter normalization (weight = 0.5).');
-        ea_coregimages(options,[bprfx,options.prefs.fa],[anatpresent{1}],[bprfx,options.prefs.fa2anat],{},0,[],1);
-        template{cnt} = [ea_space(options),'fa.nii'];
-        moving{cnt} = [bprfx,options.prefs.fa2anat];
-        weights(cnt) = 0.5;
-        cnt = cnt+1;
+
+% Drop dwi_ named modalities (dwi_fa and dwi_b0) — no MNI templates exist for them
+preopStruct = options.subj.coreg.anat.preop;
+for fn = fieldnames(preopStruct)'
+    if startsWith(fn{1}, 'dwi_')
+        preopStruct = rmfield(preopStruct, fn{1});
     end
 end
 
-disp(['Pre-op ', strjoin(fieldnames(options.subj.coreg.anat.preop), ', '), ' images included for normalization']);
-imagePresent = flip(struct2cell(options.subj.coreg.anat.preop)); % Flip the order so anchor will be the last one
+if existsFA && isfile(fa2anatPath) && usefa
+    faTemplate = fullfile(ea_space(options), 'fa.nii');
+
+    if isfile(faTemplate)
+        % Coregistered FA already exists — use it directly
+        disp('Including FA information for white-matter normalization (weight = 0.5).');
+        template{cnt} = faTemplate;
+        moving{cnt}   = fa2anatPath;
+        weights(cnt)  = 1.5;
+        cnt = cnt + 1;
+
+        % 'fa' already added above — drop from generic loop to avoid double-add.
+        if isfield(preopStruct, 'fa')
+            preopStruct = rmfield(preopStruct, 'fa');
+        end
+    end
+end
+
+disp(['Pre-op ', strjoin(fieldnames(preopStruct), ', '), ' images included for normalization']);
+imagePresent = flip(struct2cell(preopStruct)); % Flip the order so anchor will be the last one
 
 % The convergence criterion for the multivariate scenario is a slave to the
 % last metric you pass on the ANTs command line.
