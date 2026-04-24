@@ -236,7 +236,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             options.prefs.bvec = fullfile('preprocessing', 'dwi', [dwiBaseName, '.bvec']);
             options.prefs.b0 = fullfile('preprocessing', 'dwi', [dwiBaseName, '_b0.nii']);
             options.prefs.fa = fullfile('preprocessing', 'dwi', [dwiBaseName, '_fa.nii']);
-            options.prefs.fa2anat = fullfile('coregistration', 'anat', [options.patientname, '_space-anchorNative_dwi_fa.nii']);
+            options.prefs.fa2anat = fullfile('coregistration', 'anat', ['sub-', subjId, '_ses-preop_space-anchorNative_dwi_fa.nii']);
             options.prefs.FTR_unnormalized = fullfile('connectomics', 'dMRI', 'FTR.mat');
             
             options.prefs.FTR_normalized   = fullfile('connectomics', 'dMRI', 'FTR_normalized.mat');
@@ -412,6 +412,53 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
         b0Files = dir(fullfile(options.subj.subjDir, 'preprocessing', 'dwi', '*_b0.nii'));
         if ~isempty(b0Files)
             options.prefs.b0 = fullfile('preprocessing', 'dwi', b0Files(1).name);
+        end
+    end
+
+    % Inject B0 as a modality into the standard coreg/checkreg structs so
+    % that ea_coregpreopmr and ea_checkreg handle it like any other modality.
+    if isfield(options, 'prefs') && isfield(options.prefs, 'b0') && ...
+            isfield(options.subj, 'coregDir') && ...
+            isfield(options.subj, 'coreg') && ...
+            isfield(options.subj.coreg, 'anat') && ...
+            isfield(options.subj.coreg.anat, 'preop') && ...
+            ~isfield(options.subj.coreg.anat.preop, 'dwi_b0')
+
+        b0PreprocessedPath = fullfile(options.subj.subjDir, options.prefs.b0);
+
+        coregAnatDir      = fullfile(options.subj.coregDir, 'anat');
+        coregTransformDir = fullfile(options.subj.coregDir, 'transformations');
+        coregCheckregDir  = fullfile(options.subj.coregDir, 'checkreg');
+
+        b0CoregPath   = fullfile(coregAnatDir, ...
+            ['sub-', subjId, '_ses-preop_space-anchorNative_dwi_b0.nii']);
+        fwdBase       = fullfile(coregTransformDir, ...
+            ['sub-', subjId, '_from-DWI_to-anchorNative_desc-']);
+        invBase       = fullfile(coregTransformDir, ...
+            ['sub-', subjId, '_from-anchorNative_to-DWI_desc-']);
+        [~, b0CoregName] = fileparts(b0CoregPath);
+        b0CheckregFig = fullfile(coregCheckregDir, [b0CoregName, '.png']);
+
+        % Preprocessing source (input to ea_coregpreopmr)
+        if isfield(options.subj, 'preproc') && ...
+                isfield(options.subj.preproc, 'anat') && ...
+                isfield(options.subj.preproc.anat, 'preop')
+            options.subj.preproc.anat.preop.dwi_b0 = b0PreprocessedPath;
+        end
+
+        % Coregistered output path
+        options.subj.coreg.anat.preop.dwi_b0 = b0CoregPath;
+
+        % Transform base names
+        if isfield(options.subj.coreg, 'transform')
+            options.subj.coreg.transform.dwi_b0.forwardBaseName = fwdBase;
+            options.subj.coreg.transform.dwi_b0.inverseBaseName = invBase;
+        end
+
+        % Checkreg figure path
+        if isfield(options.subj.coreg, 'checkreg') && ...
+                isfield(options.subj.coreg.checkreg, 'preop')
+            options.subj.coreg.checkreg.preop.dwi_b0 = b0CheckregFig;
         end
     end
 else

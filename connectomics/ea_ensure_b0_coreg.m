@@ -54,24 +54,12 @@ b0Name  = regexprep(b0Name, '\.nii(\.gz)?$', '');
 anatName = regexprep(anatName, '\.nii(\.gz)?$', '');
 
 % Search for existing transform B0->T1
-% searchDirs = {
-%     fullfile(directory, 'coregistration', 'transformations')
-%     fullfile(directory, 'preprocessing', 'anat')
-%     directory
-% };
-% pattern = [b0Name, '2', anatName]; % B0 -> T1
-% for iDir = 1:numel(searchDirs)
-%     cdir = searchDirs{iDir};
-%     if ~isfolder(cdir), continue; end
-%     mfiles = dir(fullfile(cdir, '*.mat'));
-%     for k = 1:numel(mfiles)
-%         if contains(mfiles(k).name, pattern)
-%             fprintf('ea_ensure_b0_coreg: Found existing B0->T1 transform: %s (in %s)\n', ...
-%                 mfiles(k).name, cdir);
-%             return;
-%         end
-%     end
-% end
+hit = ea_find_b0_t1_transform(directory, options.coregmr.method);
+
+if ~isempty(hit) 
+    fprintf('ea_ensure_b0_coreg: Found existing B0<->T1 transform: %s\n', hit);
+    return;
+end
 
 % -------------------------------------------------------------------------
 % Search for existing B0<->T1 transform (robust detection)
@@ -86,16 +74,27 @@ end
 % No existing transform found -> run coregistration once
 fprintf('ea_ensure_b0_coreg: No B0->T1 transform found. Running coregistration now...\n');
 
-% Build output filename in preprocessing/anat
-outName = sprintf('%s2%s_%s.mat', b0Name, anatName, lower(regexp(options.coregmr.method, '^[^\s\(]+', 'match', 'once')));
-outDir  = fullfile(directory, 'preprocessing', 'anat');
-if ~isfolder(outDir), outDir = directory; end
-ofile   = fullfile(outDir, [b0Name, '2', anatName, '.nii']);
+% Build BIDS-style output filename for the coregistered B0 in coregistration/anat
+outDir = fullfile(directory, 'coregistration', 'anat');
+ea_mkdir(outDir);
+ofile  = fullfile(outDir, ['sub-', options.subj.subjId, '_ses-preop_space-anchorNative_dwi_b0.nii']);
+
+coregTransformDir = fullfile(directory, 'coregistration', 'transformations');
+ea_mkdir(coregTransformDir);
 
 try
     affinefile = ea_coregimages(options, b0Path, anatPath, ofile, {}, 1, [], 1);
     if ~isempty(affinefile)
-        fprintf('ea_ensure_b0_coreg: Created B0->T1 transform: %s\n', affinefile{1});
+        % Move transform file from preprocessing to coregistration/transformations
+        for k = 1:numel(affinefile)
+            if isfile(affinefile{k})
+                [~, tfname, tfext] = fileparts(affinefile{k});
+                dest = fullfile(coregTransformDir, [tfname, tfext]);
+                movefile(affinefile{k}, dest);
+                affinefile{k} = dest;
+            end
+        end
+        fprintf('ea_ensure_b0_coreg: B0->T1 transforms saved to: %s\n', coregTransformDir);
     else
         fprintf('ea_ensure_b0_coreg: ea_coregimages did not return a transform file.\n');
     end
@@ -109,26 +108,17 @@ function hit = ea_find_b0_t1_transform(directory, methodHint)
 if nargin < 2 || isempty(methodHint), methodHint = ''; end
 methodHint = lower(methodHint);
 
-searchDirs = {
-    fullfile(directory,'coregistration')
-    fullfile(directory,'coregistration','transformations')
-    fullfile(directory,'coregistration','dwi')
-    fullfile(directory,'preprocessing')
-    fullfile(directory,'preprocessing','anat')
-    fullfile(directory,'preprocessing','dwi')
-    directory
-};
+searchDir = fullfile(directory,'coregistration','transformations');
 
 % gather candidates recursively
 exts = {'*.mat','*.h5','*.txt'};
 cands = {};
 
-for i=1:numel(searchDirs)
-    if ~isfolder(searchDirs{i}), continue; end
-    for e=1:numel(exts)
-        d = dir(fullfile(searchDirs{i},'**',exts{e}));
-        for k=1:numel(d)
-            cands{end+1} = fullfile(d(k).folder,d(k).name); %#ok<AGROW>
+if isfolder(searchDir)
+    for e = 1:numel(exts)
+        d = dir(fullfile(searchDir,'**',exts{e}));
+        for k = 1:numel(d)
+            cands{end+1} = fullfile(d(k).folder, d(k).name);
         end
     end
 end
@@ -139,7 +129,7 @@ if isempty(cands), hit = ''; return; end
 bestScore = -Inf;
 hit = '';
 
-for i=1:numel(cands)
+for i = 1:numel(cands)
     [~,name,ext] = fileparts(cands{i});
     fname = lower([name ext]);
 

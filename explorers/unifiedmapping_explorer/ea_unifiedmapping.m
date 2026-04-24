@@ -106,6 +106,7 @@ classdef ea_unifiedmapping < handle
         negBaseColor = [1,1,1] % negative main color
         negcolor = [0.2824,0.6157,0.9725] % negative peak color
         hasResults = false; % results check
+        AdditionalSettingsSavePath = [];
       
     end 
 
@@ -129,7 +130,7 @@ classdef ea_unifiedmapping < handle
             obj.statsettings.doFibers = 1;
             obj.statsettings.outcometype = 'gradual';
             obj.statsettings.stimulationmodel = 'Electric Field';
-            obj.statsettings.efieldmetric = 'Peak'; % if statmetric == ;Correlations / E-fields (Irmen 2020)’, efieldmetric can calculate sum, mean or peak along tracts
+            obj.statsettings.efieldmetric = 'Sum'; % if statmetric == ;Correlations / E-fields (Irmen 2020)’, efieldmetric can calculate sum, mean or peak along tracts
             obj.statsettings.efieldthreshold = 200;
             obj.statsettings.nanthreshold = 0; % set values below this number to nan on the fly when calculating sweetspot statistics
             obj.statsettings.sweetspotresolution = 0.5; % resolution of sweetspot in mm
@@ -1425,39 +1426,73 @@ classdef ea_unifiedmapping < handle
             end
         end
 
-        function save(obj)
+        function save(obj, saveas)
             % Create a temporary object with only the required fields
+            
+            % Get all properties of the object
             explorer = ea_unifiedmapping;
-            Incprops = {'results','calcsettings','leadgroup','ID','M'};
+            Incprops = {'results','calcsettings','statsettings','leadgroup','ID','M'};
             for i = 1:length(Incprops)
                explorer.(Incprops{i}) = obj.(Incprops{i});
             end
-            % Get all properties of the object
-          
-            %This is necessary to match the settings file
-            %only save results in this
-            if isempty(obj.analysispath)
-                [pth,~,~] = fileparts(obj.leadgroup);
-                obj.analysispath=[pth,filesep,'UnifiedMappingExplorer',filesep,obj.ID,'.explorer'];
-                ea_mkdir([pth,filesep,'UnifiedMappingExplorer']);
+
+            % Determine save path
+            if nargin < 2 || isempty(saveas)
+                % Original behaviour: auto-derive path from leadgroup
+                if isempty(obj.analysispath)
+                    [pth,~,~] = fileparts(obj.leadgroup);
+                    obj.analysispath = [pth, filesep, 'UnifiedMappingExplorer', ...
+                                        filesep, obj.ID, '.explorer'];
+                    ea_mkdir([pth, filesep, 'UnifiedMappingExplorer']);
+                end
+                savepath = obj.analysispath;
+            else
+                % Save As: use the user-chosen path, and update analysispath
+                savepath = saveas;
+                obj.analysispath = saveas;
             end
-            rf=obj.resultfig; % need to stash fig handle for saving.
-            rd=obj.drawobject; % need to stash handle of drawing before saving.
-            try % could be figure is already closed.
-                setappdata(rf,['dt_',explorer.ID],rd); % store handle of tract to figure.
+        
+            rf = obj.resultfig;   % stash fig handle before saving
+            rd = obj.drawobject;  % stash drawing handle before saving
+            try
+                setappdata(rf, ['dt_', explorer.ID], rd);
             end
-            
-            save(obj.analysispath,'explorer','-v7.3');
+        
+            save(savepath, 'explorer', '-v7.3');
             saveObjectToJson(obj);
-            obj.resultfig=rf;
-            obj.drawobject=rd;
+            obj.resultfig = rf;
+            obj.drawobject = rd;
+          
+
+            % 
+            % %This is necessary to match the settings file
+            % %only save results in this
+            % if isempty(obj.analysispath)
+            %     [pth,~,~] = fileparts(obj.leadgroup);
+            %     obj.analysispath=[pth,filesep,'UnifiedMappingExplorer',filesep,obj.ID,'.explorer'];
+            %     ea_mkdir([pth,filesep,'UnifiedMappingExplorer']);
+            % end
+            % rf=obj.resultfig; % need to stash fig handle for saving.
+            % rd=obj.drawobject; % need to stash handle of drawing before saving.
+            % try % could be figure is already closed.
+            %     setappdata(rf,['dt_',explorer.ID],rd); % store handle of tract to figure.
+            % end
+            % 
+            % save(obj.analysispath,'explorer','-v7.3');
+            % saveObjectToJson(obj);
+            % obj.resultfig=rf;
+            % obj.drawobject=rd;
         end
 
         function saveObjectToJson(obj)
             % Convert object to a struct (including nested objects)
             
             voxtractsettings = objectToStruct(obj);
-            
+
+            % % % force setselection to be stored as a cell array otherwise json will get
+            % % % it wrong
+            % % voxtractsettings.setselections = struct('type','celllogical', ...
+            % %     'data',{obj.setselections});            
             % Convert struct to JSON
             jsonStr = jsonencode(voxtractsettings, 'PrettyPrint', true);
             %define filepaths
@@ -1479,7 +1514,37 @@ classdef ea_unifiedmapping < handle
             if ~isfolder(DBSMappingfolder)
                 ea_mkdir(DBSMappingfolder)
             end
-            jsonPath=[DBSMappingfolder,filesep,'Settings-',obj.ID,'_conn-',conn_val,'.json'];
+
+            % check for custom save path
+            if isprop(obj, 'AdditionalSettingsSavePath') && ...
+                    ~isempty(obj.AdditionalSettingsSavePath)
+                customPath = obj.AdditionalSettingsSavePath;
+                % enforce .json extension
+                [folder, name, ext] = fileparts(customPath);
+                name = ['Settings-', name];
+                if isempty(ext)
+                    ext = '.json';
+                end
+            
+                if ~strcmpi(ext, '.json')
+                    error('AdditionalSettingsSavePath must point to a .json file');
+                end
+
+                % if no folder provided, use DBSMappingfolder
+                if isempty(folder)
+                    folder = DBSMappingfolder;
+                end
+            
+                jsonPath = fullfile(folder, [name ext]);
+            
+            else
+                % default behavior
+                jsonPath = fullfile(DBSMappingfolder, ...
+                    ['Settings-', obj.ID, '.json']);
+            end
+
+            % jsonPath=[DBSMappingfolder,filesep,'Settings-',obj.ID,'_conn-',conn_val,'.json'];
+            % 
             % Write JSON to a file
             fileID = fopen(jsonPath, 'w');
             if fileID == -1

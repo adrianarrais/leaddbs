@@ -100,14 +100,6 @@ for irest = 1:options.prefs.n_rest
     end
 end
 
-% b0 image
-if exist([ea_stripext(options.prefs.b0),'_t1'],'file')
-    if ~ea_reglocked(options,[ea_stripext(options.prefs.b0),'_t1'])
-        checkregImages = [checkregImages;{[ea_stripext(options.prefs.b0),'_t1']}];
-        b0restanchor{length(checkregImages)} = [options.prefs.b0];
-    end
-end
-
 if isempty(checkregImages)
     evalin('base','checkregempty=1;');
     close(handles.leadfigure)
@@ -211,11 +203,23 @@ else
             savejson('', json, options.subj.coreg.log.method);
         end
 
+        % Determine session from filename when possible; fall back to
+        % probing which checkreg sub-struct actually contains this modality
+        % (handles DWI-derived images whose path may not include 'ses-preop')
         if contains(currvol, 'ses-preop')
-            checkregFig = options.subj.coreg.checkreg.preop.(modality);
+            session = 'preop';
+        elseif contains(currvol, 'ses-postop')
+            session = 'postop';
+        elseif isfield(options.subj.coreg.checkreg, 'preop') && ...
+               isfield(options.subj.coreg.checkreg.preop, modality)
+            session = 'preop';
+        elseif isfield(options.subj.coreg.checkreg, 'postop') && ...
+               isfield(options.subj.coreg.checkreg.postop, modality)
+            session = 'postop';
         else
-            checkregFig = options.subj.coreg.checkreg.postop.(modality);
+            session = 'preop'; % safe default
         end
+        checkregFig = options.subj.coreg.checkreg.(session).(modality);
     end
 
     set(handles.normsettings, 'Visible', 'off');
@@ -450,6 +454,18 @@ else % MR
 
         session = regexp(currvol, '(?<=_ses-)(preop|postop)', 'match', 'once');
         modality = ea_getmodality(currvol);
+
+        % Fallback: infer session from which coreg struct has this modality
+        % (needed for DWI-derived images whose path may omit 'ses-preop').
+        if isempty(session)
+            if isfield(options.subj.coreg.anat, 'preop') && isfield(options.subj.coreg.anat.preop, modality)
+                session = 'preop';
+            elseif isfield(options.subj.coreg.anat, 'postop') && isfield(options.subj.coreg.anat.postop, modality)
+                session = 'postop';
+            else
+                session = 'preop'; % safe default
+            end
+        end
 
         if strcmp(session, 'preop')
             % Override preop preproc and coreg fields and then run coregpreopmr

@@ -69,6 +69,12 @@ def check_electrode_availability(reco_electrode):
         "PMT 2102-12-094": "PMTsEEG2102_12",
         "PMT 2102-14-094": "PMTsEEG2102_14",
         "PMT 2102-16-094": "PMTsEEG2102_16",
+        "AdTech BF08R-SP21X": "BF08R_SP21X_0C3",
+        "AdTech BF10R-SP21X": "BF10R_SP21X_0C3",
+        "AdTech BF12R-SP21X": "BF12R_SP21X_0C3",
+        "AdTech BF08R-SP05X": "BF08R_SP05X_0BH",
+        "AdTech BF10R-SP05X": "BF10R_SP05X_0BH",
+        "AdTech BF12R-SP05X": "BF12R_SP05X_0BH",
     }
 
     for lead in electrode_names.keys():
@@ -116,11 +122,11 @@ def get_geom_definitions(contact_locations):
     unit_directions = unit_directions.flatten()
     
     Dimensions = {
-                "x[mm]": 100.0
+                "x[mm]": 70.0
                 + np.abs(unit_directions[0]) * actual_span * 2.0,
-                "y[mm]": 100.0
+                "y[mm]": 70.0
                 + np.abs(unit_directions[1]) * actual_span * 2.0,
-                "z[mm]": 100.0
+                "z[mm]": 70.0
                 + np.abs(unit_directions[2]) * actual_span * 2.0,
             }
     
@@ -168,9 +174,9 @@ if __name__ == '__main__':
     ''' input processing '''
     SEEG_recos = sys.argv[1]
     _,extension = os.path.splitext(SEEG_recos)
-    if extension == '.tsv':
-        # either we get reco from tsv (Clemens' format)
-        SEEG_recos_df = pd.read_csv(SEEG_recos, sep='\t')
+    if extension == '.tsv' or extension == '.csv':
+        # either we get reco from tsv (BIDS format)
+        SEEG_recos_df = pd.read_csv(SEEG_recos)  # make sure that contact numbering in the ascending order
     elif extension == '.mat':
         print("Lead-DBS reconstruction files are currently not supported")
         raise SystemExit()
@@ -182,7 +188,7 @@ if __name__ == '__main__':
     # stimulations in any case from .csv
     # separate file for each electrode!
     SEEG_stim = sys.argv[2]
-    SEEG_stim_df = pd.read_csv(SEEG_stim, sep=',')
+    SEEG_stim_df = pd.read_csv(SEEG_stim)
     SEEG_stim_df = SEEG_stim_df.replace('None', np.nan)
     SEEG_stim_array = SEEG_stim_df.to_numpy()     
     
@@ -290,8 +296,12 @@ if __name__ == '__main__':
         elec_params = default_electrode_parameters[oss_electrode]
         # first_contact = first_active_coords - active_index * (spacing) * unit_direction
         # this might be wrong if the first contact (active tip) has a different length
-        imp_coords = np.array([contact_coords[0][0].values[0],contact_coords[0][1].values[0],contact_coords[0][2].values[0]]) - cnt_active_idx[0] * (elec_params.contact_length + elec_params.contact_spacing) * unit_directions
-
+        if 'BF' in oss_electrode:
+            # first contact spacing might be different
+            imp_coords = np.array([contact_coords[0][0],contact_coords[0][1],contact_coords[0][2]]) - (cnt_active_idx[0] * (elec_params.contact_length + elec_params.contact_spacing) + bool(cnt_active_idx[0]) * (elec_params.first_contact_spacing-elec_params.contact_spacing)) * unit_directions  
+        else:
+            imp_coords = np.array([contact_coords[0][0],contact_coords[0][1],contact_coords[0][2]]) - cnt_active_idx[0] * (elec_params.contact_length + elec_params.contact_spacing) * unit_directions         
+ 
         # offset = from tip to the center of the first contact 
         offset = elec_params.get_center_first_contact() * 1.0
         tip_position = imp_coords - offset * unit_directions
@@ -421,7 +431,7 @@ if __name__ == '__main__':
                         "y[mm]": grid_center[1][0],
                         "z[mm]": grid_center[2][0]
                     },
-                    "Shape": {"x": 51, "y": 51, "z": 51},
+                    "Shape": {"x": 71, "y": 71, "z": 71},
                     "Direction": {
                         "x[mm]": 0,
                         "y[mm]": 0,
@@ -439,7 +449,8 @@ if __name__ == '__main__':
             "CalcAxonActivation": False,
             "ActivationThresholdVTA[V-per-m]": 200.0,
             "FailFlag": 'rh',
-            "OutOfCore": False
+            "OutOfCore": False,
+            "TruncateAfterActivePartRatio": None
         }
             
         # contact dictionary is specified separately

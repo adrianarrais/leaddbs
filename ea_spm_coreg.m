@@ -46,6 +46,9 @@ end
 movingmat = spm_get_space(moving);
 fixedmat = spm_get_space(fixed);
 
+% Reset SPM's job manager state before every run to prevent silent job 
+% (SPM can skip a job if it recognises the same config from a previous call in the same session, producing no output and no error).
+% spm_jobman('initcfg');
 if doreslice
     % backup moving image
     movingbackup = ea_niifileparts(moving);
@@ -71,7 +74,7 @@ if doreslice
     matlabbatch{1}.spm.spatial.coreg.estwrite.roptions.wrap = [0 0 0];
     matlabbatch{1}.spm.spatial.coreg.estwrite.roptions.mask = 0;
     matlabbatch{1}.spm.spatial.coreg.estwrite.roptions.prefix = 'r';
-    spm_jobman('initcfg');
+    % spm_jobman('initcfg');
     spm_jobman('run',{matlabbatch});
 else
     matlabbatch{1}.spm.spatial.coreg.estimate.ref = {fixed};
@@ -81,6 +84,7 @@ else
     matlabbatch{1}.spm.spatial.coreg.estimate.eoptions.sep = [12 10 8 6 4 2];
     matlabbatch{1}.spm.spatial.coreg.estimate.eoptions.tol = [0.02 0.02 0.02 0.001 0.001 0.001 0.01 0.01 0.01 0.001 0.001 0.001];
     matlabbatch{1}.spm.spatial.coreg.estimate.eoptions.fwhm = [7 7];
+    % spm_jobman('initcfg');
     spm_jobman('run',{matlabbatch});
 end
 

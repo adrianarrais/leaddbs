@@ -15,17 +15,25 @@ end
 modality = cell(size(BIDSFilePath));
 
 for i=1:length(BIDSFilePath)
-    % change code here to recognize fa too - adriana
-    parsedStruct = parseBIDSFilePath(BIDSFilePath{1});
-    hasAcq  = isfield(parsedStruct, 'acq')    && ~isempty(parsedStruct.acq);
-    hasSuf  = isfield(parsedStruct, 'suffix') && ~isempty(parsedStruct.suffix);
+    try
+        parsedStruct = parseBIDSFilePath(BIDSFilePath{i});
+        hasAcq = isfield(parsedStruct, 'acq')    && ~isempty(parsedStruct.acq);
+        hasSuf = isfield(parsedStruct, 'suffix') && ~isempty(parsedStruct.suffix);
 
-    if hasAcq && hasSuf
-        modality{i} = [parsedStruct.acq '_' parsedStruct.suffix];
-    elseif hasSuf
-        modality{i} = parsedStruct.suffix;
-    elseif hasAcq
-        modality{i} = parsedStruct.acq;
+        if hasAcq && hasSuf
+            modality{i} = [parsedStruct.acq '_' parsedStruct.suffix];
+        elseif hasSuf
+            modality{i} = parsedStruct.suffix;
+        elseif hasAcq
+            modality{i} = parsedStruct.acq;
+        end
+    catch
+        % Fallback for filenames that don't strictly conform to BIDS:
+        % strip all key-value entities (e.g. 'sub-XX_', 'ses-preop_',
+        % 'desc-preproc_') and use whatever remains as the modality token.
+        % Example: 'sub-XX_ses-preop_desc-preproc_dwi_b0' -> 'dwi_b0'
+        [~, fname] = fileparts(BIDSFilePath{i});
+        modality{i} = regexprep(fname, '[a-zA-Z]+-[^\W_]+_', '');
     end
 
     % code older version
