@@ -686,11 +686,14 @@ for i = find(uiapp.niiFileTable.Data.Include)'
     modality = char(uiapp.niiFileTable.Data.Modality(i));
     acq = char(uiapp.niiFileTable.Data.Acquisition(i));
 
-    % depending on the modality, choose extensions of files to be copied
+    % depending on the modality, choose extensions of files to be copied.
+    % For DWI we also pick up the BIDS sidecars (.bval/.bvec). Both .nii and
+    % .nii.gz are listed because dcm2niix can produce either; only one of
+    % the two is expected per source.
     if ~strcmp(modality, 'dwi')
-        extensions = {'.nii.gz', '.json'};
+        extensions = {'.nii.gz', '.nii', '.json'};
     else
-        extensions = {'.nii.gz', '.json', '.bval', '.bvec'};
+        extensions = {'.nii.gz', '.nii', '.json', '.bval', '.bvec'};
     end
 
     % get filename
@@ -706,9 +709,19 @@ for i = find(uiapp.niiFileTable.Data.Include)'
 
     for j = 1:length(extensions)
         source = [source_no_ext extensions{j}];
+        % BIDS requires .bval/.bvec to share the DWI basename. If dcm2niix
+        % produced a sidecar with a slightly different stem, fall back to a
+        % unique sidecar in the same source folder.
+        if ~isfile(source) && strcmp(modality, 'dwi') && any(strcmp(extensions{j}, {'.bval', '.bvec'}))
+            sidecar = dir(fullfile(fileparts(source_no_ext), ['*', extensions{j}]));
+            if numel(sidecar) == 1
+                source = fullfile(sidecar(1).folder, sidecar(1).name);
+            end
+        end
         if isfile(source)
             copyfile(source, [destin_no_ext, extensions{j}])
-        else
+        elseif ~any(strcmp(extensions{j}, {'.nii', '.nii.gz'}))
+            % .nii / .nii.gz are alternatives, only warn for true sidecars.
             ea_cprintf('CmdWinWarnings', 'File not found:\n%s\n', source);
         end
     end
