@@ -749,6 +749,21 @@ catch ME
     ea_cprintf('CmdWinWarnings', 'Could not generate raw images JSON (non-critical):\n%s\n', ME.message);
 end
 
+% Mirror legacy migration behaviour: if a DWI was imported, populate
+% derivatives/leaddbs/<sub>/preprocessing/dwi/ from rawdata so the BIDS
+% sidecars (.bval/.bvec) are co-located with the DWI in both stages.
+rawDwiDir = fullfile(dataset_folder, 'rawdata', subjID, 'ses-preop', 'dwi');
+if isfolder(rawDwiDir) && ~isempty(dir(fullfile(rawDwiDir, '*_dwi.nii*')))
+    dtiOptions.root = [fullfile(dataset_folder, 'derivatives', 'leaddbs'), filesep];
+    dtiOptions.patientname = subjID;
+    dtiOptions.prefs = struct();
+    try
+        ea_prepare_dti_bids(dtiOptions);
+    catch ME
+        ea_cprintf('CmdWinWarnings', 'Could not stage DWI into preprocessing (non-critical):\n%s\n', ME.message);
+    end
+end
+
 setappdata(groot, 'sortedFiles', sortedFiles);
 setappdata(groot, 'returnCode', 'okay');
 delete(uiapp);      % close window
