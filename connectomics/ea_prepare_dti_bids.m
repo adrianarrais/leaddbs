@@ -74,8 +74,8 @@ try
         options.prefs.dti = fullfile('preprocessing', 'dwi', [dwiBaseNameNorm, '.nii']);
         options.prefs.bval = fullfile('preprocessing', 'dwi', [dwiBaseNameNorm, '.bval']);
         options.prefs.bvec = fullfile('preprocessing', 'dwi', [dwiBaseNameNorm, '.bvec']);
-        options.prefs.b0 = fullfile('preprocessing', 'dwi', [dwiBaseNameNorm, '_b0.nii']);
-        options.prefs.fa = fullfile('preprocessing', 'dwi', [dwiBaseNameNorm, '_fa.nii']);
+        options.prefs.b0 = fullfile('preprocessing', 'dwi', ['sub-', subjId, '_ses-preop_b0.nii']);
+        options.prefs.fa = fullfile('preprocessing', 'dwi', ['sub-', subjId, '_ses-preop_fa.nii']);
         
         disp(['DWI files prepared: ', targetDwi]);
     else

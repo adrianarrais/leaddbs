@@ -234,9 +234,9 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             options.prefs.dti = strrep(dwiPath, [options.subj.subjDir, filesep], '');
             options.prefs.bval = fullfile('preprocessing', 'dwi', [dwiBaseName, '.bval']);
             options.prefs.bvec = fullfile('preprocessing', 'dwi', [dwiBaseName, '.bvec']);
-            options.prefs.b0 = fullfile('preprocessing', 'dwi', [dwiBaseName, '_b0.nii']);
-            options.prefs.fa = fullfile('preprocessing', 'dwi', [dwiBaseName, '_fa.nii']);
-            options.prefs.fa2anat = fullfile('coregistration', 'anat', ['sub-', subjId, '_ses-preop_space-anchorNative_dwi_fa.nii']);
+            options.prefs.b0 = fullfile('preprocessing', 'dwi', ['sub-', subjId, '_ses-preop_b0.nii']);
+            options.prefs.fa = fullfile('preprocessing', 'dwi', ['sub-', subjId, '_ses-preop_fa.nii']);
+            options.prefs.fa2anat = fullfile('coregistration', 'anat', ['sub-', subjId, '_ses-preop_space-anchorNative_fa.nii']);
             options.prefs.FTR_unnormalized = fullfile('connectomics', 'dMRI', 'FTR.mat');
             
             options.prefs.FTR_normalized   = fullfile('connectomics', 'dMRI', 'FTR_normalized.mat');
@@ -294,8 +294,8 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
                 options.prefs.bval = strrep(targetBval, [options.subj.subjDir, filesep], '');
                 options.prefs.bvec = strrep(targetBvec, [options.subj.subjDir, filesep], '');
                 % b0 and fa will be generated in same directory
-                options.prefs.b0 = fullfile('preprocessing', 'dwi', [dwiBaseName, '_b0.nii']);
-                options.prefs.fa = fullfile('preprocessing', 'dwi', [dwiBaseName, '_fa.nii']);
+                options.prefs.b0 = fullfile('preprocessing', 'dwi', ['sub-', subjId, '_ses-preop_b0.nii']);
+                options.prefs.fa = fullfile('preprocessing', 'dwi', ['sub-', subjId, '_ses-preop_fa.nii']);
                 % Fiber tracking output (BIDS: stored in connectomics/dMRI/)
                 options.prefs.FTR_unnormalized = fullfile('connectomics', 'dMRI', 'FTR.mat');
                 options.prefs.FTR_normalized   = fullfile('connectomics', 'dMRI', 'FTR_normalized.mat');
@@ -422,7 +422,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
             isfield(options.subj, 'coreg') && ...
             isfield(options.subj.coreg, 'anat') && ...
             isfield(options.subj.coreg.anat, 'preop') && ...
-            ~isfield(options.subj.coreg.anat.preop, 'dwi_b0')
+            ~isfield(options.subj.coreg.anat.preop, 'b0')
 
         b0PreprocessedPath = fullfile(options.subj.subjDir, options.prefs.b0);
 
@@ -431,7 +431,7 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
         coregCheckregDir  = fullfile(options.subj.coregDir, 'checkreg');
 
         b0CoregPath   = fullfile(coregAnatDir, ...
-            ['sub-', subjId, '_ses-preop_space-anchorNative_dwi_b0.nii']);
+            ['sub-', subjId, '_ses-preop_space-anchorNative_b0.nii']);
         fwdBase       = fullfile(coregTransformDir, ...
             ['sub-', subjId, '_from-DWI_to-anchorNative_desc-']);
         invBase       = fullfile(coregTransformDir, ...
@@ -443,22 +443,22 @@ if contains(directory, ['derivatives', filesep, 'leaddbs'])
         if isfield(options.subj, 'preproc') && ...
                 isfield(options.subj.preproc, 'anat') && ...
                 isfield(options.subj.preproc.anat, 'preop')
-            options.subj.preproc.anat.preop.dwi_b0 = b0PreprocessedPath;
+            options.subj.preproc.anat.preop.b0 = b0PreprocessedPath;
         end
 
         % Coregistered output path
-        options.subj.coreg.anat.preop.dwi_b0 = b0CoregPath;
+        options.subj.coreg.anat.preop.b0 = b0CoregPath;
 
         % Transform base names
         if isfield(options.subj.coreg, 'transform')
-            options.subj.coreg.transform.dwi_b0.forwardBaseName = fwdBase;
-            options.subj.coreg.transform.dwi_b0.inverseBaseName = invBase;
+            options.subj.coreg.transform.b0.forwardBaseName = fwdBase;
+            options.subj.coreg.transform.b0.inverseBaseName = invBase;
         end
 
         % Checkreg figure path
         if isfield(options.subj.coreg, 'checkreg') && ...
                 isfield(options.subj.coreg.checkreg, 'preop')
-            options.subj.coreg.checkreg.preop.dwi_b0 = b0CheckregFig;
+            options.subj.coreg.checkreg.preop.b0 = b0CheckregFig;
         end
     end
 else

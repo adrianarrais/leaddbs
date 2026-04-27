@@ -58,7 +58,7 @@ for mov = 1:length(movingimage)
     else
         [~, suf] = ea_niifileparts(movingimage{mov});
     end
-    is_fa(mov) = strcmpi(suf, 'fa') || strcmpi(suf, 'dwi_fa');
+    is_fa(mov) = strcmpi(suf, 'fa');
 end
 is_slab = false(length(fixedimage),1);
 
