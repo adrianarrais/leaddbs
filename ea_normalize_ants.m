@@ -25,7 +25,8 @@ if ischar(options) % return name of method.
     return
 end
 
-existsFA = isfile(fullfile(options.subj.subjDir, options.prefs.fa));
+existsFA = isfield(options.prefs, 'fa') && ~isempty(options.prefs.fa) && ...
+    isfile(fullfile(options.subj.subjDir, options.prefs.fa));
 if isfield(options.prefs, 'fa2anat') && ~isempty(options.prefs.fa2anat)
     fa2anatPath = fullfile(options.subj.subjDir, options.prefs.fa2anat);
 else
@@ -46,7 +47,7 @@ for fn = fieldnames(preopStruct)'
     end
 end
 
-if existsFA && isfile(fa2anatPath) && usefa
+if existsFA && ~isempty(fa2anatPath) && isfile(fa2anatPath) && usefa
     faTemplate = fullfile(ea_space(options), 'fa.nii');
 
     if isfile(faTemplate)
@@ -142,4 +143,3 @@ else
         ' Nonlinear deformation into template space was achieved in three stages: After two linear (rigid followed by affine) steps, ',...
         ' a nonlinear (whole brain) SyN registration stage was added.'],cits);
 end
-
