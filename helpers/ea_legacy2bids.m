@@ -674,8 +674,6 @@ for patients = 1:length(source)
                                 new_path = fullfile(dest,subfolder_cell{subfolders},patient_name,sessions{j},modes{i});
                             end
                             if strcmp(modes{i},'anat') && strcmp(sessions{j},'ses-preop')
-                                tmp_path = fullfile(new_path,'tmp');
-                                ea_mkdir(tmp_path);
                                 disp("Migrating pre operative session data...")
                                 %files to be moved into pre-op:raw_anat_*.nii
                                 for matching_files = 1:length(matching_files_preop)
@@ -698,8 +696,6 @@ for patients = 1:length(source)
                                     end
                                 end
                             elseif strcmp(modes{i},'anat') && strcmp(sessions{j},'ses-postop')
-                                tmp_path = fullfile(new_path,'tmp');
-                                ea_mkdir(tmp_path);
                                 disp("Migrating post operative session data...")
                                 for matching_files = 1:length(matching_files_postop)
                                     if contains(matching_files_postop{matching_files},'ct','IgnoreCase',true)
@@ -750,15 +746,7 @@ for patients = 1:length(source)
                                             end
                                         end
                                     end
-                                    % Clean up dwi tmp folder after processing
-                                    dwi_tmp_path = fullfile(new_path,'tmp');
-                                    if exist(dwi_tmp_path,'dir')
-                                        ea_delete(dwi_tmp_path);
-                                    end
                                 end
-                            end
-                            if exist(tmp_path,'dir')
-                                ea_delete(tmp_path);
                             end
                         end
 
@@ -922,18 +910,22 @@ end
 
 
 function move_raw2bids(source_patient_path,new_path,which_file,bids_name)
-tmp_path = fullfile(new_path,'tmp');
-ea_mkdir(tmp_path);
-if exist(fullfile(source_patient_path,which_file),'file')
-    copyfile(fullfile(source_patient_path,which_file),tmp_path);
-    if endsWith(which_file,'.nii')
-        gzip(fullfile(tmp_path,which_file))
-        ea_delete(fullfile(tmp_path,which_file))
-        which_file = [which_file,'.gz'];
-    end
-    movefile(fullfile(tmp_path,which_file),fullfile(tmp_path,bids_name));
-    copyfile(fullfile(tmp_path,bids_name),new_path);
+sourceFile = fullfile(source_patient_path, which_file);
+destFile = fullfile(new_path, bids_name);
 
+if exist(sourceFile, 'file')
+    ea_mkdir(new_path);
+
+    if endsWith(which_file, '.nii')
+        gzip(sourceFile, new_path);
+        gzFile = fullfile(new_path, [which_file, '.gz']);
+
+        if ~strcmp(gzFile, destFile)
+            movefile(gzFile, destFile, 'f');
+        end
+    else
+        copyfile(sourceFile, destFile, 'f');
+    end
 end
 function move_mni2bids(mni_files,native_files,~,headmodel,which_pipeline,patient_name,new_path)
 if strcmp(which_pipeline,'headmodel')
