@@ -1,17 +1,13 @@
 function ea_exportb0(options)
 
-% Add here function to detect b0 automatically
-b0threshold = 200;
-
 disp('Export b0...');
 bvals=load([options.root,options.patientname,filesep,options.prefs.bval]);
-idx=find(bvals<b0threshold);
+b0threshold = ea_detect_b0threshold(bvals);
+idx=find(bvals<=b0threshold);
 
 if isempty(idx)
-    matlab.desktop.editor.openAndGoToLine(which('ea_exportb0'), 3);
-    error(sprintf(['Exporting b0 image failed: b0 threshold is too small!\n' ...
-           'Please check your dti.bval and _temporarily_ set ''b0threshold''', ...
-           ' in function ''ea_exportb0'' to a proper higher value.']));
+    error(['Exporting b0 image failed: no volumes detected below the auto b0 threshold (', ...
+           num2str(b0threshold), '). Please check your dti.bval file.']);
 end
 
 cnt=1;
@@ -63,3 +59,32 @@ else
 end
 
 
+function thr = ea_detect_b0threshold(bvals)
+% Use the lowest b-value shell as b0 and separate it from the next shell.
+
+bvals = bvals(:);
+sv = sort(unique(bvals));
+
+if numel(sv) < 2
+    thr = sv(1) + 1;
+    return;
+end
+
+% Minimum gap required to treat the next b-value as a new shell
+% Smaller gaps are absorbed into the current low-b shell
+shellTol = 100;
+
+% Grow the low-b shell while neighboring b-values remain close
+topIdx = 1;
+while topIdx < numel(sv) && (sv(topIdx+1) - sv(topIdx)) <= shellTol
+    topIdx = topIdx + 1;
+end
+
+if topIdx == numel(sv)
+    % No higher shell to separate from
+    thr = sv(end) + 1;
+    return;
+end
+
+% Select everything up to the low shell, but not the next shell
+thr = (sv(topIdx) + sv(topIdx+1)) / 2;
