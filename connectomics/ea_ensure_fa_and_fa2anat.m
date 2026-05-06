@@ -37,8 +37,8 @@ isBIDS = contains(directory, 'derivatives') || contains(directory, 'leaddbs');
 if isBIDS
     coregAnatDir = fullfile(directory, 'coregistration', 'anat');
     ea_mkdir(coregAnatDir);
-    % BIDS-style name: sub-XXX_ses-preop_space-anchorNative_dwi_fa.nii
-    fa2anatName = ['sub-', options.subj.subjId, '_ses-preop_space-anchorNative_dwi_fa.nii'];
+    % BIDS-style name: sub-XXX_ses-preop_space-anchorNative_fa.nii
+    fa2anatName = ['sub-', options.subj.subjId, '_ses-preop_space-anchorNative_fa.nii'];
     fa2anatPath = fullfile(coregAnatDir, fa2anatName);
     fa2anatRel  = fullfile('coregistration', 'anat', fa2anatName);
 else
@@ -110,7 +110,7 @@ function hit = find_b0_t1_forward_transform(directory, options)
 % Return full path to a B0->T1 forward transform file, or '' if none found.
 %
 % Strategy:
-%  1. Use options.subj.coreg.transform.dwi_b0.forwardBaseName directly
+%  1. Use options.subj.coreg.transform.b0.forwardBaseName directly
 %     (most reliable — already populated by ea_coregpreopmr).
 %  2. Fall back to a scored file-system search in coregistration/transformations/.
 
@@ -130,9 +130,9 @@ methodHint = lower(regexp(method, '^[^\s\(]+', 'match', 'once'));
 if isstruct(options) && isfield(options, 'subj') && ...
         isfield(options.subj, 'coreg') && ...
         isfield(options.subj.coreg, 'transform') && ...
-        isfield(options.subj.coreg.transform, 'dwi_b0')
+        isfield(options.subj.coreg.transform, 'b0')
 
-    base = options.subj.coreg.transform.dwi_b0.forwardBaseName;
+    base = options.subj.coreg.transform.b0.forwardBaseName;
 
     % Map method string to the transform file suffix saved by ea_coregpreopmr
     switch methodHint

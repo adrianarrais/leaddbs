@@ -42,10 +42,10 @@ usebrainmask=0;
 cnt=1;
 spacedef = options.bids.spacedef;
 
-% Drop dwi_ named modalities (dwi_fa and dwi_b0) — no MNI templates exist for them
+% Drop diffusion-derived modalities (b0 and fa) — no MNI templates exist for them
 preopStruct = options.subj.coreg.anat.preop;
 for fn = fieldnames(preopStruct)'
-    if startsWith(fn{1}, 'dwi_')
+    if any(strcmp(fn{1}, {'b0', 'fa'}))
         preopStruct = rmfield(preopStruct, fn{1});
     end
 end

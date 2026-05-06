@@ -36,12 +36,6 @@ for i=1:length(BIDSFilePath)
         modality{i} = regexprep(fname, '[a-zA-Z]+-[^\W_]+_', '');
     end
 
-    % code older version
-    % if ~opts.acq || ~isempty(regexp(BIDSFilePath{i}, '_CT\.nii(.gz)?$', 'once')) % Skip plane label
-    %     modality{i} = regexp(BIDSFilePath{i}, '(?<=_)([^\W_]+)(?=\.nii(\.gz)?$)', 'match', 'once');
-    % else % Keep plane label
-    %     modality{i} = regexp(BIDSFilePath{i}, '(?<=_acq-)((ax|sag|cor|iso)\d*_[^\W_]+)(?=\.nii(\.gz)?$)', 'match', 'once');
-    % end
 end
 
 if wasChar
