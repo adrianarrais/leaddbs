@@ -36,7 +36,7 @@ usefa = options.prefs.machine.normsettings.ants_usefa;
 existsFA = isfile(fullfile(options.subj.subjDir,options.prefs.fa));
 existB0 = isfile(fullfile(options.subj.subjDir,options.prefs.b0));
 
-fa2anatPath = isfile(fullfile(options.subj.subjDir,options.prefs.fa2anat));
+fa2anatPath = fullfile(options.subj.subjDir,options.prefs.fa2anat);
 usebrainmask=0;
 
 cnt=1;
@@ -55,7 +55,7 @@ if existsFA && isfile(fa2anatPath) && usefa
 
     if isfile(faTemplate)
         % Coregistered FA already exists — use it directly
-        disp('Including FA information for white-matter normalization (weight = 0.5).');
+        disp('Including FA information for white-matter normalization.');
         template{cnt} = faTemplate;
         moving{cnt}   = fa2anatPath;
         weights(cnt)  = 1.5;
