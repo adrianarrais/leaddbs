@@ -476,6 +476,13 @@ else % MR
                 options.subj.coreg.anat.preop = rmfield(options.subj.coreg.anat.preop, preopFields{f});
             end
             ea_coregpreopmr(options);
+
+            % FA is derived in DWI space and brought into anchor space with
+            % the B0->anchor transform.  When that transform is recomputed,
+            % the existing FA-in-anchor image is stale and must be rebuilt.
+            if strcmpi(modality, 'b0') || endsWith(lower(modality), '_b0')
+                options = refresh_fa_after_b0_coreg(options);
+            end
         elseif strcmp(session, 'postop')
             % Override postop preproc and coreg fields and then run coregpostopmr
             postopFields = fieldnames(options.subj.preproc.anat.postop);
@@ -506,6 +513,53 @@ title = get(handles.leadfigure, 'Name');
 ea_chirp(options);
 ea_busyaction('off', handles.leadfigure, 'coreg');
 set(handles.leadfigure, 'Name', title);
+
+
+function options = refresh_fa_after_b0_coreg(options)
+% Reapply the newly computed B0->anchor transform to the FA map.
+
+% ea_ensure_fa_and_fa2anat deliberately reuses an existing output, so
+% remove that output first to force application of the updated transform.
+if ~isfield(options, 'prefs') || ~isfield(options.prefs, 'fa2anat') || ...
+        isempty(options.prefs.fa2anat)
+    return;
+end
+
+fa2anatPath = options.prefs.fa2anat;
+isAbsolutePath = startsWith(fa2anatPath, filesep) || ...
+    ~isempty(regexp(fa2anatPath, '^[A-Za-z]:[\\/]', 'once')) || ...
+    startsWith(fa2anatPath, '\\');
+if ~isAbsolutePath
+    fa2anatPath = fullfile(options.subj.subjDir, fa2anatPath);
+end
+
+ea_delete(fa2anatPath);
+options = ea_ensure_fa_and_fa2anat(options);
+
+if ~isfile(fa2anatPath)
+    warning('B0 coregistration was updated, but FA could not be regenerated with the new transform.');
+    return;
+end
+
+% Refresh the visual QC generated from the old FA resampling as well.
+[~, fa2anatName] = fileparts(fa2anatPath);
+faCheckregPath = fullfile(options.subj.coregDir, 'checkreg', [fa2anatName, '.png']);
+ea_delete(faCheckregPath);
+anchorImage = options.subj.coreg.anat.preop.(options.subj.AnchorModality);
+ea_gencheckregpair(fa2anatPath, anchorImage, faCheckregPath);
+
+% A previously approved FA referred to the old transform. Mark the newly
+% generated result as unapproved so it is presented for review again.
+if isfile(options.subj.coreg.log.method)
+    json = loadjson(options.subj.coreg.log.method);
+    if isfield(json, 'approval') && isstruct(json.approval)
+        faModality = ea_getmodality(fa2anatPath);
+        json.approval.(faModality) = 0;
+        savejson('', json, options.subj.coreg.log.method);
+    end
+end
+
+fprintf('FA was regenerated using the updated B0->anchor transform.\n');
 
 
 function ea_cleandownstream(directory, thisrest)
