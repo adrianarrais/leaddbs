@@ -60,8 +60,7 @@ handles.patientname.String = options.subj.subjId;
 set(handles.normsettings, 'Visible', 'off');
 
 % Get coregistered pre-op images (except for the anchor image)
-preopCoregImages = struct2cell(options.subj.coreg.anat.preop);
-preopCoregImages = preopCoregImages(2:end);
+preopCoregImages = get_ordered_preop_coreg_images(options);
 
 % Get coregistered post-op images
 if strcmp(options.subj.postopModality, 'CT')
@@ -562,6 +561,32 @@ end
 fprintf('FA was regenerated using the updated B0->anchor transform.\n');
 
 
+function images = get_ordered_preop_coreg_images(options)
+% Return dependent DWI-derived images in QC order: B0, FA, then the rest.
+preop = options.subj.coreg.anat.preop;
+if isfield(preop, options.subj.AnchorModality)
+    preop = rmfield(preop, options.subj.AnchorModality);
+end
+
+fields = fieldnames(preop);
+images = struct2cell(preop);
+priority = repmat(3, size(fields));
+for i = 1:numel(fields)
+    fieldName = lower(fields{i});
+    modality = lower(ea_getmodality(images{i}));
+    if strcmp(fieldName, 'b0') || strcmp(modality, 'b0') || ...
+            endsWith(fieldName, '_b0') || endsWith(modality, '_b0')
+        priority(i) = 1;
+    elseif strcmp(fieldName, 'fa') || strcmp(modality, 'fa') || ...
+            endsWith(fieldName, '_fa') || endsWith(modality, '_fa')
+        priority(i) = 2;
+    end
+end
+
+[~, order] = sort(priority);
+images = images(order);
+
+
 function ea_cleandownstream(directory, thisrest)
 % cleanup fibertracking mask
 ea_delete([directory,'trackingmask.nii']);
@@ -630,8 +655,7 @@ activevolume = getappdata(handles.leadfigure, 'activevolume');
 currvol = checkregImages{activevolume};
 
 % Get coregistered pre-op images (except for the anchor image)
-preopCoregImages = struct2cell(options.subj.coreg.anat.preop);
-preopCoregImages = preopCoregImages(2:end);
+preopCoregImages = get_ordered_preop_coreg_images(options);
 
 if strcmp(currvol, options.subj.norm.anat.preop.(options.subj.AnchorModality))
     json = loadjson(options.subj.norm.log.method);
@@ -799,8 +823,7 @@ activevolume = getappdata(handles.leadfigure,'activevolume');
 currvol = checkregImages{activevolume};
 
 % Get coregistered pre-op images (except for the anchor image)
-preopCoregImages = struct2cell(options.subj.coreg.anat.preop);
-preopCoregImages = preopCoregImages(2:end);
+preopCoregImages = get_ordered_preop_coreg_images(options);
 
 if strcmp(currvol, options.subj.norm.anat.preop.(options.subj.AnchorModality))
     json = loadjson(options.subj.norm.log.method);
