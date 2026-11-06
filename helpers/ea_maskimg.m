@@ -7,10 +7,10 @@ filePath = GetFullPath(filePath);
 
 % Set brain mask and masked image path
 if isBIDSFileName(filePath)
-    brainMask = setBIDSEntity(filePath, 'mod', parsedStruct.suffix, 'label', 'Brain', 'suffix', 'mask');
     parsedStruct = parseBIDSFilePath(filePath);
+    brainMask = setBIDSEntity(filePath, 'mod', parsedStruct.suffix, 'label', 'Brain', 'suffix', 'mask');
     if isfield(parsedStruct, 'acq')
-        maskedImage = setBIDSEntity(filePath, 'acq', [], 'label', 'Brain', 'acq', parsedStruct.acq)
+        maskedImage = setBIDSEntity(filePath, 'acq', [], 'label', 'Brain', 'acq', parsedStruct.acq);
     else
         maskedImage = setBIDSEntity(filePath, 'label', 'Brain');
     end
