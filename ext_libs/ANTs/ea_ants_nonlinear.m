@@ -62,19 +62,6 @@ for mov = 1:length(movingimage)
 end
 is_slab = false(length(fixedimage),1);
 
-% [TEST] Dedicated FA stage: if a template-space FA coverage mask is given,
-% FA is excluded from all regular stages and registered in a separate SyN
-% stage whose fixed mask restricts the FA metric to the template's coverage.
-fa_stage = isfield(options, 'famask') && ~isempty(options.famask) ...
-    && isfile(options.famask) && any(is_fa);
-fa_stage_include_anchor = true; % also evaluate the anchor inside the FA stage (keeps T1 consistency)
-if fa_stage
-    disp(['FA coverage mask found: FA is used in a separate masked SyN stage (', options.famask, ').']);
-    excl_fa = is_fa(:)';
-else
-    excl_fa = false(1, length(fixedimage));
-end
-
 if slabsupport
     if isBIDSFileName(movingimage{end})
         parsedStruct = parseBIDSFilePath(movingimage{end});
@@ -198,7 +185,7 @@ rigidstage = [' --transform Rigid[0.25]' ... % bit faster gradient step (see htt
     ' --masks [',fixedmask,',',movingmask,']'];
 
 for fi = 1:length(fixedimage)
-    if ~is_segmentation(fi) && ~is_slab(fi) && ~excl_fa(fi)
+    if ~is_segmentation(fi) && ~is_slab(fi)
         rigidstage = [rigidstage,...
             get_metric_command(fixedimage{fi}, movingimage{fi}, weights(fi), metrics_prefix_suffix(fi,:))];
     end
@@ -211,7 +198,7 @@ affinestage = [' --transform Affine[0.15]'... % bit faster gradient step (see ht
     ' --masks [',fixedmask,',',movingmask,']'];
 
 for fi = 1:length(fixedimage)
-    if ~is_segmentation(fi) && ~is_slab(fi) && ~excl_fa(fi)
+    if ~is_segmentation(fi) && ~is_slab(fi)
         affinestage = [affinestage,...
             get_metric_command(fixedimage{fi}, movingimage{fi}, weights(fi), metrics_prefix_suffix(fi,:))];
     end
@@ -224,31 +211,12 @@ synstage = [' --transform ',apref.antsmode,apref.antsmode_suffix...
     ' --masks [',fixedmask,',',movingmask,']'];
 
 for fi = 1:length(fixedimage)
-    if (is_segmentation(fi) && slab_present) || excl_fa(fi) % slab stage with segmentation / FA stage added later
+    if is_segmentation(fi) && slab_present % slab stage with segmentation is added later
         continue
     else
         synstage = [synstage,...
             get_metric_command(fixedimage{fi}, movingimage{fi}, weights(fi), metrics_prefix_suffix(fi,:))];
     end
-end
-
-% [TEST] Add FA stage: FA metric only evaluated inside the template FA coverage
-if fa_stage
-    fastage = [' --transform ',apref.antsmode,apref.antsmode_suffix...
-        ' --convergence ', synconvergence, ...
-        ' --shrink-factors ', synshrinkfactors ...
-        ' --smoothing-sigmas ', synsmoothingssigmas, ...
-        ' --masks [',ea_path_helper(options.famask),',',movingmask,']'];
-    for fi = find(is_fa(:)')
-        fastage = [fastage,...
-            get_metric_command(fixedimage{fi}, movingimage{fi}, weights(fi), metrics_prefix_suffix(fi,:))];
-    end
-    if fa_stage_include_anchor % anchor last -> convergence follows anchor metric
-        fastage = [fastage,...
-            get_metric_command(fixedimage{end}, movingimage{end}, weights(end), metrics_prefix_suffix(end,:))];
-    end
-else
-    fastage = '';
 end
 
 % Add slab stage
@@ -259,7 +227,7 @@ if slab_present
         ' --smoothing-sigmas ', synsmoothingssigmas, ...
         ' --masks [',fixedmask,',',slab_movingmask,']'];
 
-    for fi = find(~excl_fa)
+    for fi = 1:length(fixedimage)
         slabstage = [slabstage,...
             get_metric_command(fixedimage{fi}, movingimage{fi}, weights(fi), metrics_prefix_suffix(fi,:))];
     end
@@ -278,7 +246,7 @@ if  options.prefs.machine.normsettings.ants_scrf
         ' --shrink-factors ', synmaskshrinkfactors,  ...
         ' --smoothing-sigmas ', synmasksmoothingssigmas, ...
         ' --masks [',ea_path_helper([ea_space([],'subcortical'),'secondstepmask','.nii']),',',slab_movingmask,']'];
-    for fi = find(~excl_fa)
+    for fi = 1:length(fixedimage)
         synmaskstage = [synmaskstage,...
             get_metric_command(fixedimage{fi}, movingimage{fi}, weights(fi), metrics_prefix_suffix(fi,:))];
     end
@@ -299,7 +267,6 @@ cfg.outputimage = outputimage;
 cfg.rigidstage = rigidstage;
 cfg.affinestage = affinestage;
 cfg.synstage = synstage;
-cfg.fastage = fastage;
 cfg.slabstage = slabstage;
 cfg.synmaskstage = synmaskstage;
 
