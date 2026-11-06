@@ -25,6 +25,11 @@ if ischar(options) % return name of method.
     return
 end
 
+% [TEST] FA template has limited coverage. Instead of cutting images, FA is
+% removed from the regular stages and used in a separate SyN stage whose
+% fixed mask is the FA template's coverage (see ea_ants_nonlinear).
+useMaskedFAStage = 1;
+
 existsFA = isfile(fullfile(options.subj.subjDir, options.prefs.fa));
 if isfield(options.prefs, 'fa2anat') && ~isempty(options.prefs.fa2anat)
     fa2anatPath = fullfile(options.subj.subjDir, options.prefs.fa2anat);
@@ -58,6 +63,9 @@ if existsFA && isfile(fa2anatPath) && usefa
         disp('Including FA information for white-matter normalization.');
         template{cnt} = faTemplate;
         moving{cnt}   = fa2anatPath;
+        if useMaskedFAStage
+            options.famask = ea_make_fa_coverage_mask(options, faTemplate);
+        end
         weights(cnt)  = 1.5;
         cnt = cnt + 1;
 
@@ -147,3 +155,33 @@ else
         ' a nonlinear (whole brain) SyN registration stage was added.'],cits);
 end
 
+
+function covTemplate = ea_make_fa_coverage_mask(options, faTemplate)
+% [TEST] Binary coverage mask of the FA template, in template space.
+% Used as the FIXED mask of a dedicated FA SyN stage in ea_ants_nonlinear,
+% so the FA metric is only evaluated where the template FA has data.
+% No image is cut and no native-space mask is needed.
+
+covThreshold = 0;   % template FA values above this count as covered
+erodeMM      = 1;   % small erosion to stay off the template's edge ramp
+
+workDir = fullfile(options.subj.subjDir, 'normalization', 'famask');
+ea_mkdir(workDir);
+covTemplate = fullfile(workDir, 'famask_template.nii');
+
+nii = ea_load_nii(faTemplate);
+mask = nii.img > covThreshold;
+mask = single(imfill(mask, 'holes'));
+voxSize = abs(diag(nii.mat(1:3,1:3)))';
+for d = 1:3 % separable box erosion (min filter along each axis)
+    k = 2*round(erodeMM / voxSize(d)) + 1;
+    if k > 1
+        mask = movmin(mask, k, d, 'Endpoints', 'fill');
+        mask(isnan(mask)) = 0;
+    end
+end
+nii.img = mask;
+nii.dt = [2 0];
+nii.fname = covTemplate;
+ea_write_nii(nii);
+fprintf('[FA stage] FA template coverage mask written to %s\n', covTemplate);

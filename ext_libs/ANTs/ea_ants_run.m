@@ -96,6 +96,10 @@ cmd = [cfg.ANTS, ' --verbose 1', ...
     initreg, ...
     cfg.rigidstage, cfg.affinestage, cfg.synstage];
 
+if isfield(cfg, 'fastage')
+    cmd = [cmd, cfg.fastage];
+end
+
 if isfield(cfg, 'slabstage')
     cmd = [cmd, cfg.slabstage];
 end
