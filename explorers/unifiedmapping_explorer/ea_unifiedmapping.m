@@ -146,6 +146,7 @@ classdef ea_unifiedmapping < handle
             obj.calcsettings.structuralresolution = '2 mm';
             obj.calcsettings.calcmethod = 1; %1 = e-field based method, 2 = fiber based method
             obj.calcsettings.calcspace = 1; %0 = native space, 1 = MNI space
+            obj.calcsettings.submarine = 1; %1 = fiberfiltering on each patient's personalised submarine atlas (native space only)
             obj.calcsettings.netmap_connectome = '';
             obj.calcsettings.fibfilt_connectome = '';
             if ~isfield(obj.NMviz,'modelRH')
@@ -325,6 +326,15 @@ classdef ea_unifiedmapping < handle
                 % stores the result in the LeadGroup folder
                 % also merges fiberActivation_.._.mat and stores them in
                 % stimulation folders
+                if isfield(obj.calcsettings,'submarine') && obj.calcsettings.submarine
+                    % personalised submarine atlas replaces the selected connectome
+                    if obj.calcsettings.calcspace ~= 0 || obj.calcsettings.calcmethod ~= 2 || ...
+                            obj.calcsettings.connectivity_type ~= 1 || isfield(obj.M,'pseudoM')
+                        ea_error('The personalised submarine atlas requires Stimulation Volumes, Native Space and the Fiber Based Method.');
+                    end
+                    obj.calcsettings.fibfilt_connectome = 'focus-submarine';
+                    obj.calcsettings.multi_pathways = 1;
+                end
                 if ~isempty(obj.results) % something has been calculated
                     if isfield(obj.results,'fiberfiltering')
                         fname = ea_unifiedmapping_conn2connid(obj.calcsettings.fibfilt_connectome);
@@ -344,7 +354,9 @@ classdef ea_unifiedmapping < handle
                         end
                     end
                 end
-                if obj.calcsettings.multi_pathways == 1
+                if isfield(obj.calcsettings,'submarine') && obj.calcsettings.submarine
+                    [cfile, obj.map_list, obj.pathway_list] = ea_unifiedmapping_mergeSubmarine(obj);
+                elseif obj.calcsettings.multi_pathways == 1
                     [cfile, obj.map_list, obj.pathway_list] = ea_unifiedmapping_mergePathways(obj);
                 else
                     cfile = [ea_getconnectomebase('dMRI'), obj.calcsettings.fibfilt_connectome, filesep, 'data.mat'];
@@ -615,7 +627,9 @@ classdef ea_unifiedmapping < handle
                 ea_cprintf('CmdWinWarnings', 'No prior fiberfiltering results for current connectome. Run Calculate first.\n');
                 return;
             end
-            if obj.calcsettings.multi_pathways == 1
+            if isfield(obj.calcsettings,'submarine') && obj.calcsettings.submarine
+                [cfile, obj.map_list, obj.pathway_list] = ea_unifiedmapping_mergeSubmarine(obj);
+            elseif obj.calcsettings.multi_pathways == 1
                 [cfile, obj.map_list, obj.pathway_list] = ea_unifiedmapping_mergePathways(obj);
             else
                 cfile = [ea_getconnectomebase('dMRI'), obj.calcsettings.fibfilt_connectome, filesep, 'data.mat'];

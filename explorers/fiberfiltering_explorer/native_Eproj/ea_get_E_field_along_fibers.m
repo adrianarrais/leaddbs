@@ -1,4 +1,4 @@
-function ea_get_E_field_along_fibers(pt_folder,stim_space,e_field_file, MNI_connectome_file, side_suffix, threshold)
+function ea_get_E_field_along_fibers(pt_folder,stim_space,e_field_file, MNI_connectome_file, side_suffix, threshold, use_submarine)
 % get E-field metrics along fibers (computed in native space)
 % By J.Roediger and K.Butenko
 
@@ -8,7 +8,8 @@ arguments
     e_field_file            % full path to the 4-D nifti (see ea_get_4Dfield_from_csv)
     MNI_connectome_file     % full path to the connectome, use merged_pathways.mat for pathway atlases
     side_suffix             % _rh - right hemisphere
-    threshold               % sum and mean E-field metrics are only computed on segments above this E-field threshold (in V/m) 
+    threshold               % sum and mean E-field metrics are only computed on segments above this E-field threshold (in V/m)
+    use_submarine (1,1) logical = false  % use the patient's personalised submarine atlas (already native) instead of warping the connectome
 end
 
 % interpolation from the E-field grid to the fiber compartments
@@ -30,8 +31,44 @@ pt_folder = char(pt_folder);
 % warp the connectome to native if necessary
 if strcmp(space,'native')
     connectomeFile_in_native = strcat([pt_folder, filesep,'connectomes',filesep,'dMRI', filesep, connectomeName, filesep, connectomeFileName, connectomeExtension]);
+    if use_submarine
+        % personalised submarine tracts are already in native space: no warp
+        disp("Loading personalised submarine atlas (native space)...")
+        ftr = ea_unifiedmapping_loadSubmarine(pt_folder);
+        reference = load(MNI_connectome_file, 'idx');
+        if isempty(ftr) || ~isequal(reference.idx(:), ftr.idx(:))
+            if ~isempty(ftr)
+                ea_cprintf('CmdWinWarnings', 'Personalised submarine atlas of %s does not match the template fiber order.\n', pt_folder);
+            end
+            ea_cprintf('CmdWinWarnings', ['Skipping %s (%s): it will have no connected fibers in the analysis. ', ...
+                'Deselect this patient to keep it out of the statistics.\n'], pt_folder, side_suffix);
+            % remove E-metrics of a previous run so they are not picked up for this patient
+            staleMetrics = fullfile(pt_folder, 'connectomes', 'dMRI', connectomeName, [stim_folder_name, side_suffix], 'E_metrics.mat');
+            if isfile(staleMetrics)
+                delete(staleMetrics);
+            end
+            return
+        end
+        % store the merged personalised tracts in the patient folder (same fibers,
+        % single merged_pathways.mat); rewritten when missing, when the atlas files
+        % are newer or when it holds a different set of fibers
+        nativeAtlasDir = fullfile(pt_folder, 'atlases', 'submarine atlas - Back in T1 Native');
+        atlasFiles = dir(fullfile(nativeAtlasDir, '**', '*_back_t1native_*.mat'));
+        atlasFiles(startsWith({atlasFiles.name}, '.')) = [];
+        mergedInfo = dir(connectomeFile_in_native);
+        storeMerged = isempty(mergedInfo) || mergedInfo.datenum < max([atlasFiles.datenum]);
+        if ~storeMerged
+            stored = load(connectomeFile_in_native, 'idx');
+            storeMerged = ~isequal(stored.idx(:), ftr.idx(:));
+        end
+        if storeMerged
+            disp("Storing merged personalised submarine atlas...")
+            ftr.orig_connectome = nativeAtlasDir;
+            ea_mkdir(fileparts(connectomeFile_in_native));
+            save(connectomeFile_in_native, '-struct', 'ftr');
+        end
     % check if the connectome was already warped in native
-    if isfile(connectomeFile_in_native)
+    elseif isfile(connectomeFile_in_native)
         disp("The connectome was already warped, loading...")
         ftr = load(connectomeFile_in_native);
     else

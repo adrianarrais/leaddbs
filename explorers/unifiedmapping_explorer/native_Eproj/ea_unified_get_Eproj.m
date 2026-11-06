@@ -72,7 +72,7 @@ for pt_i = 1:size(tractset.M.patient.list,1)
             end  
 
             % compute projection of the E-field onto the fibers
-            ea_get_E_field_along_fibers(tractset.M.patient.list{pt_i}, stim_space, vatlist{pt_i,side}, merged_connectome, side_suffix, tractset.calcthreshold)
+            ea_get_E_field_along_fibers(tractset.M.patient.list{pt_i}, stim_space, vatlist{pt_i,side}, merged_connectome, side_suffix, tractset.calcthreshold, isfield(tractset.calcsettings,'submarine') && tractset.calcsettings.submarine)
         else
             [~,pt_label,~] = fileparts(tractset.M.patient.list{pt_i});
             fprintf("Missing stimulation for %s, %s side \n",pt_label,side_suffix)
