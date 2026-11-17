@@ -98,9 +98,33 @@ fprintf('ea_ensure_fa_and_fa2anat: Using B0->T1 transform: %s\n', transform);
 fprintf('ea_ensure_fa_and_fa2anat: Applying B0->T1 transform to FA...\n');
 try
     ea_apply_coregistration(anatPath, faPath, fa2anatPath, transform);
-    
+
     if isBIDS
         options.prefs.fa2anat = fa2anatRel;
+    end
+
+    % Inject FA into the options structs so that ea_gencheckregfigs and
+    % ea_checkreg (called next in ea_autocoord) show FA on this same run,
+    % without waiting for a second call to ea_getptopts.
+    if isfield(options, 'subj') && ...
+            isfield(options.subj, 'coreg') && ...
+            isfield(options.subj.coreg, 'anat') && ...
+            isfield(options.subj.coreg.anat, 'preop') && ...
+            ~isfield(options.subj.coreg.anat.preop, 'fa') && ...
+            isfield(options.subj, 'preproc') && ...
+            isfield(options.subj.preproc, 'anat') && ...
+            isfield(options.subj.preproc.anat, 'preop')
+
+        options.subj.coreg.anat.preop.fa   = fa2anatPath;
+        options.subj.preproc.anat.preop.fa = faPath;
+
+        if isfield(options.subj, 'coregDir') && ...
+                isfield(options.subj.coreg, 'checkreg') && ...
+                isfield(options.subj.coreg.checkreg, 'preop')
+            [~, faCoregName] = fileparts(fa2anatPath);
+            options.subj.coreg.checkreg.preop.fa = fullfile( ...
+                options.subj.coregDir, 'checkreg', [faCoregName, '.png']);
+        end
     end
 catch ME
     warning('ea_ensure_fa_and_fa2anat: Failed to apply transform to FA: %s', ME.message);
