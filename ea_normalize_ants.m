@@ -58,7 +58,7 @@ if existsFA && isfile(fa2anatPath) && usefa
         disp('Including FA information for white-matter normalization.');
         template{cnt} = faTemplate;
         moving{cnt}   = fa2anatPath;
-        weights(cnt)  = 1.5;
+        weights(cnt)  = 1.25;
         cnt = cnt + 1;
 
         % Always skull-strip when FA is used: FA noise outside the brain can bend
