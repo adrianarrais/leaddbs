@@ -61,6 +61,14 @@ if existsFA && isfile(fa2anatPath) && usefa
         weights(cnt)  = 1.5;
         cnt = cnt + 1;
 
+        % Always skull-strip when FA is used: FA noise outside the brain can bend
+        % the brainstem. ANTs then uses the template brain mask (brainmask.nii.gz).
+        % Applies to this run only; the checkbox in ANTs settings is unchanged.
+        if ~options.prefs.machine.normsettings.ants_skullstripped
+            disp('FA included: skull-stripping (template brain mask) switched on for this normalization.');
+            options.prefs.machine.normsettings.ants_skullstripped = 1;
+        end
+
         % 'fa' already added above — drop from generic loop to avoid double-add.
         if isfield(preopStruct, 'fa')
             preopStruct = rmfield(preopStruct, 'fa');
