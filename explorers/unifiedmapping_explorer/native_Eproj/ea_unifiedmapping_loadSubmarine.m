@@ -1,6 +1,5 @@
 function [ftr, map_list, pathway_list] = ea_unifiedmapping_loadSubmarine(pt_folder)
-% Merge the submarine atlas tracts that are FOCUS pathways (see
-% ea_unifiedmapping_focusTracts) into one connectome.
+% Merge all submarine atlas tracts (rh, lh, midline) into one connectome.
 % The tract order is always taken from the template atlas, so the template
 % reference and every patient's personalised tracts share fiber indices.
 %   pt_folder = ''  -> template atlas (reference for fiber indexing and drawing)
@@ -20,7 +19,6 @@ if ~isempty(pt_folder) && ~isfolder(nativeDir)
     return
 end
 
-focusTracts = ea_unifiedmapping_focusTracts();
 C = {};
 C_idx = {};
 glob_index = 1;
@@ -30,9 +28,6 @@ for h = 1:numel(hemis)
     tractFiles = sort({tractFiles.name});
     for t = 1:numel(tractFiles)
         [~, tract] = fileparts(tractFiles{t});
-        if ~ismember(tract, focusTracts)
-            continue % not a FOCUS pathway
-        end
         if isempty(pt_folder)
             tractFile = fullfile(templateDir, hemis{h}, tractFiles{t});
         else

@@ -332,7 +332,7 @@ classdef ea_unifiedmapping < handle
                             obj.calcsettings.connectivity_type ~= 1 || isfield(obj.M,'pseudoM')
                         ea_error('The personalised submarine atlas requires Stimulation Volumes, Native Space and the Fiber Based Method.');
                     end
-                    obj.calcsettings.fibfilt_connectome = 'focus-submarine';
+                    obj.calcsettings.fibfilt_connectome = 'submarine';
                     obj.calcsettings.multi_pathways = 1;
                 end
                 if ~isempty(obj.results) % something has been calculated
