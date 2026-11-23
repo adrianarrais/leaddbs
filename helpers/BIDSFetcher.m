@@ -120,8 +120,8 @@ classdef BIDSFetcher
         end
 
         function rawImages = getRawImages(obj, subjId)
-            if isfile(obj.getPrefs(subjId, 'rawimages')) 
-                rawImages = loadjson(obj.getPrefs(subjId, 'rawimages')); 
+            if isfile(obj.getPrefs(subjId, 'rawimages'))
+                rawImages = loadjson(obj.getPrefs(subjId, 'rawimages'));
             else
                 rawImages = ea_genrawimagesjson(obj.datasetDir, subjId);
             end
@@ -358,12 +358,12 @@ classdef BIDSFetcher
             subj.acpc.acpcManual     = fullfile(subj.acpcDir, ['sub-' subj.subjId '_desc-acpcmanual.fcsv']);
         end
 
-        function preopAnat = getPreopAnat(obj, subjId) 
+        function preopAnat = getPreopAnat(obj, subjId)
             % Set dirs
             rawDataDir = fullfile(obj.datasetDir, 'rawdata', ['sub-', subjId]);
 
             % Get raw images struct
-            rawImages = obj.getRawImages(subjId);  
+            rawImages = obj.getRawImages(subjId);
 
             % Return in case not found
             if ~isfield(rawImages, 'preop')
@@ -475,7 +475,7 @@ classdef BIDSFetcher
             end
         end
 
-        function preprocAnat = getPreprocAnat(obj, subjId, preferMRCT) 
+        function preprocAnat = getPreprocAnat(obj, subjId, preferMRCT)
             % Get pre-op anat images
             preopAnat = obj.getPreopAnat(subjId);
 
@@ -489,12 +489,14 @@ classdef BIDSFetcher
             for i=1:length(fields)
                 modality = fields{i};
                 parsed = parseBIDSFilePath(preopAnat.(modality));
-
-                % Added condition - correction
-                if isempty(parsed.suffix)
+                hasAcq = isfield(parsed, 'acq') && ~isempty(parsed.acq);
+                hasSuf = isfield(parsed, 'suffix') && ~isempty(parsed.suffix);
+                if hasAcq && hasSuf
+                    preprocAnat.preop.(modality) = fullfile(baseDir, [baseName, 'acq-', parsed.acq, '_', parsed.suffix, parsed.ext]);
+                elseif hasAcq
                     preprocAnat.preop.(modality) = fullfile(baseDir, [baseName, 'acq-', parsed.acq, parsed.ext]);
                 else
-                    preprocAnat.preop.(modality) = fullfile(baseDir, [baseName, 'acq-', parsed.acq, '_', parsed.suffix, parsed.ext]);
+                    preprocAnat.preop.(modality) = fullfile(baseDir, [baseName, parsed.suffix, parsed.ext]);
                 end
             end
 
@@ -524,14 +526,14 @@ classdef BIDSFetcher
             end
         end
 
-        function coregAnat = getCoregAnat(obj, subjId, preferMRCT) 
+        function coregAnat = getCoregAnat(obj, subjId, preferMRCT)
             if ~exist('preferMRCT', 'var')
                 preferMRCT = obj.settings.preferMRCT;
             end
             preferMRCT = checkModality(obj, subjId, preferMRCT);
-            % disp('goes here')
+
             % Get preprocessed anat images
-            preprocAnat = obj.getPreprocAnat(subjId, preferMRCT); 
+            preprocAnat = obj.getPreprocAnat(subjId, preferMRCT);
 
             % Get LeadDBS dirs
             LeadDBSDirs = obj.getLeadDBSDirs(subjId);
@@ -543,7 +545,6 @@ classdef BIDSFetcher
                 for j=1:length(modality)
                     anat = strrep(preprocAnat.(session{i}).(modality{j}), LeadDBSDirs.preprocDir, LeadDBSDirs.coregDir);
                     coregAnat.(session{i}).(modality{j}) = strrep(anat , ['ses-', session{i}, '_'], ['ses-', session{i}, '_space-', obj.anchorSpace, '_']);
-                    % end
                 end
             end
 
@@ -553,7 +554,7 @@ classdef BIDSFetcher
             end
         end
 
-        function coregTransform = getCoregTransform(obj, subjId, preferMRCT) 
+        function coregTransform = getCoregTransform(obj, subjId, preferMRCT)
             if ~exist('preferMRCT', 'var')
                 preferMRCT = obj.settings.preferMRCT;
             end
@@ -567,7 +568,7 @@ classdef BIDSFetcher
             coregAnat = obj.getCoregAnat(subjId, preferMRCT);
 
             % Set pre-coregistration transformation
-            fields = fieldnames(coregAnat.preop); 
+            fields = fieldnames(coregAnat.preop);
             coregTransform.(fields{1}) = [baseName, 'desc-precoreg_', fields{1}, '.mat'];
 
             % Set pre-op MR transformation
@@ -612,7 +613,7 @@ classdef BIDSFetcher
             preferMRCT = checkModality(obj, subjId, preferMRCT);
 
             % Get coregistered anat images
-            coregAnat = obj.getCoregAnat(subjId, preferMRCT); 
+            coregAnat = obj.getCoregAnat(subjId, preferMRCT);
 
             % Remove pre-op anchor anat image
             fields = fieldnames(coregAnat.preop);
@@ -633,9 +634,7 @@ classdef BIDSFetcher
             for i=1:length(session)
                 modality = fieldnames(coregAnat.(session{i}));
                 for j=1:length(modality)
-                    
                     coregCheckreg.(session{i}).(modality{j}) = setBIDSEntity(coregAnat.(session{i}).(modality{j}), 'dir', checkregDir, 'ext', '.png');
-                    
                 end
             end
         end
